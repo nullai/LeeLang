@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace leelang
+namespace LeeLang
 {
 	public enum Token
 	{
@@ -525,17 +525,6 @@ namespace leelang
 						return true;
 				}
 			}
-		}
-	}
-	public class TokenExpression
-	{
-		public LocatedToken opcode;
-		public TokenExpression[] value;
-
-		public TokenExpression(LocatedToken opcode, TokenExpression[] value)
-		{
-			this.opcode = opcode;
-			this.value = value;
 		}
 	}
 }

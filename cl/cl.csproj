@@ -6,7 +6,7 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{C2BEEB3E-A643-4543-99D2-0A5ED4082A54}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>leelang</RootNamespace>
+    <RootNamespace>LeeLang</RootNamespace>
     <AssemblyName>cl</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -49,6 +49,7 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SourceFile.cs" />
+    <Compile Include="Statement.cs" />
     <Compile Include="Tokenizer.cs" />
   </ItemGroup>
   <ItemGroup>
