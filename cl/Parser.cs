@@ -41,28 +41,43 @@ namespace LeeLang
 		{
 			Console.WriteLine("WARING:" + msg);
 		}
-		public List<Statement> ParseFile()
+		public FileStatement ParseFile()
 		{
-			List<Statement> result = new List<Statement>();
+			FileStatement result = new FileStatement(m_tokener.file.FullPathName);
 
-			Token token;
-			while ((token = m_current.token) != Token.EOF)
+			while (m_current.token != Token.EOF)
 			{
-				switch (token)
-				{
-					case Token.USING:
-						Next();
-						result.Add(ParseUsing());
-						break;
-					default:
-						// TODO:
-						Error("未知Token:" + token);
-						Next();
-						break;
-				}
+				result.members.Add(ParseFileMember());
 			}
 
 			return result;
+		}
+
+		public Statement ParseFileMember()
+		{
+			switch (m_current.token)
+			{
+				case Token.USING:
+					Next();
+					return ParseUsing();
+				default:
+					return ParseNamespaceMember();
+			}
+		}
+
+		public Statement ParseNamespaceMember()
+		{
+			switch (m_current.token)
+			{
+				case Token.NAMESPACE:
+					Next();
+					return ParseNamespace();
+				default:
+					// TODO:
+					Error("未知Token:" + m_current);
+					Next();
+					return new ErrorStatement();
+			}
 		}
 
 		public Statement ParseUsing()
@@ -93,6 +108,25 @@ namespace LeeLang
 			return new UsingStatement(null, name);
 		}
 
+		public Statement ParseNamespace()
+		{
+			NamesExpression name = ParseNamesExpression();
+			if (name.IsEmpty)
+				Error("期望一个名字。");
+
+			if (m_current.token != Token.OPEN_BRACE)
+				return new ErrorStatement();
+			Next();
+
+			NamespaceStatement space = new NamespaceStatement(name);
+			while (m_current.token != Token.EOF && m_current.token != Token.CLOSE_BRACE)
+			{
+				space.members.Add(ParseNamespaceMember());
+			}
+			Expect(Token.CLOSE_BRACE);
+			return space;
+		}
+
 		public NamesExpression ParseNamesExpression()
 		{
 			NamesExpression result = new NamesExpression();
@@ -119,6 +153,8 @@ namespace LeeLang
 						Next();
 						break;
 					default:
+						if (!result.IsEmpty)
+							Error("期望一个标识符");
 						return result;
 				}
 				if (m_current.token != Token.DOT)

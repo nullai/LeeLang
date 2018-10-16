@@ -17,8 +17,8 @@ namespace LeeLang
 
 				Parser par = new Parser(file);
 				var s = par.ParseFile();
-				for (int i = 0; i < s.Count; i++)
-					Console.WriteLine(s[i].GetType().Name);
+				for (int i = 0; i < s.members.Count; i++)
+					Console.WriteLine(s.members[i].GetType().Name);
 			}
 			catch(Exception ex)
 			{

@@ -32,6 +32,21 @@ namespace LeeLang
 	{
 	}
 
+	public class EmptyStatement : Statement
+	{
+	}
+
+	public class FileStatement : Statement
+	{
+		public string file_name;
+		public List<Statement> members = new List<Statement>();
+
+		public FileStatement(string file_name)
+		{
+			this.file_name = file_name;
+		}
+	}
+
 	public class UsingStatement : Statement
 	{
 		public string name;
@@ -41,6 +56,18 @@ namespace LeeLang
 		{
 			this.name = name;
 			this.value = value;
+		}
+
+	}
+
+	public class NamespaceStatement : Statement
+	{
+		public NamesExpression name;
+		public List<Statement> members = new List<Statement>();
+
+		public NamespaceStatement(NamesExpression name)
+		{
+			this.name = name;
 		}
 
 	}
