@@ -55,7 +55,7 @@ namespace LeeLang
 		PRIVATE,
 		PROTECTED,
 		PUBLIC,
-		REF,
+		WEEK,
 		RETURN,
 		SBYTE,
 		SEALED,
@@ -268,8 +268,8 @@ namespace LeeLang
 					return Token.PROTECTED;
 				case "public":
 					return Token.PUBLIC;
-				case "ref":
-					return Token.REF;
+				case "week":
+					return Token.WEEK;
 				case "return":
 					return Token.RETURN;
 				case "sbyte":

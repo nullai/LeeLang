@@ -37,7 +37,15 @@ namespace LeeLang
 		{
 			Console.WriteLine("ERROR:" + msg);
 		}
+		public void Error(Location pos, string msg)
+		{
+			Console.WriteLine("ERROR:" + msg);
+		}
 		public void Waring(string msg)
+		{
+			Console.WriteLine("WARING:" + msg);
+		}
+		public void Waring(Location pos, string msg)
 		{
 			Console.WriteLine("WARING:" + msg);
 		}
@@ -47,31 +55,70 @@ namespace LeeLang
 
 			while (m_current.token != Token.EOF)
 			{
-				result.members.Add(ParseFileMember());
+				result.members.Add(ParseStatement());
 			}
 
 			return result;
 		}
-
-		public Statement ParseFileMember()
+		private Attributes AddAttribute(Attributes attr, LocatedToken val)
 		{
+			if (attr == null)
+				attr = new Attributes();
+			if (attr.sys == null)
+				attr.sys = new List<LocatedToken>();
+
+			if (attr.sys.FindIndex(x => x.token == val.token) >= 0)
+				Error("重复的属性");
+			else
+				attr.sys.Add(val);
+			return attr;
+		}
+		private void RejectAttribute(Attributes attr)
+		{
+			if (attr == null)
+				return;
+			if (attr.sys == null)
+				return;
+			for (int i = 0; i < attr.sys.Count; i++)
+			{
+				var v = attr.sys[i];
+				Error(v.loc, "不支持此属性:" + v);
+			}
+		}
+		public Statement ParseStatement()
+		{
+			Attributes attr = null;
+			_begin:
 			switch (m_current.token)
 			{
 				case Token.USING:
+					RejectAttribute(attr);
 					Next();
 					return ParseUsing();
-				default:
-					return ParseNamespaceMember();
-			}
-		}
-
-		public Statement ParseNamespaceMember()
-		{
-			switch (m_current.token)
-			{
 				case Token.NAMESPACE:
+					RejectAttribute(attr);
 					Next();
 					return ParseNamespace();
+				case Token.PUBLIC:
+				case Token.PROTECTED:
+				case Token.PRIVATE:
+				case Token.STATIC:
+				case Token.CONST:
+				case Token.FINALLY:
+				case Token.EXPLICIT:
+				case Token.EXTERN:
+				case Token.IMPLICIT:
+				case Token.INTERNAL:
+				case Token.OVERRIDE:
+				case Token.PARAMS:
+				case Token.SEALED:
+				case Token.VIRTUAL:
+				case Token.VOLATILE:
+				case Token.PARTIAL:
+				case Token.WEEK:
+					attr = AddAttribute(attr, m_current);
+					Next();
+					goto _begin;
 				default:
 					// TODO:
 					Error("未知Token:" + m_current);
@@ -121,7 +168,7 @@ namespace LeeLang
 			NamespaceStatement space = new NamespaceStatement(name);
 			while (m_current.token != Token.EOF && m_current.token != Token.CLOSE_BRACE)
 			{
-				space.members.Add(ParseNamespaceMember());
+				space.members.Add(ParseStatement());
 			}
 			Expect(Token.CLOSE_BRACE);
 			return space;
