@@ -51,5 +51,38 @@ namespace LeeLang
 		}
 
 	}
+
+	public class ClassStatement : Statement
+	{
+		public Attributes attr;
+		public LocatedToken key;
+		public NamesExpression name;
+		public NamesExpression base_type;
+		public List<Statement> members = new List<Statement>();
+
+		public ClassStatement(Attributes attr, LocatedToken key, NamesExpression name)
+		{
+			this.attr = attr;
+			this.key = key;
+			this.name = name;
+		}
+
+	}
+
+	public class EnumStatement : Statement
+	{
+		public Attributes attr;
+		public LocatedToken key;
+		public NamesExpression name;
+		public NamesExpression base_type;
+		public List<Statement> members = new List<Statement>();
+
+		public EnumStatement(Attributes attr, LocatedToken key, NamesExpression name)
+		{
+			this.attr = attr;
+			this.key = key;
+			this.name = name;
+		}
+	}
 }
 

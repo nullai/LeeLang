@@ -119,6 +119,28 @@ namespace LeeLang
 					attr = AddAttribute(attr, m_current);
 					Next();
 					goto _begin;
+				case Token.CLASS:
+				case Token.STRUCT:
+				case Token.INTERFACE:
+					return ParseClass(attr);
+				case Token.ENUM:
+					return ParseEnum(attr);
+				case Token.VOID:
+				case Token.OBJECT:
+				case Token.BOOL:
+				case Token.SBYTE:
+				case Token.BYTE:
+				case Token.SHORT:
+				case Token.USHORT:
+				case Token.INT:
+				case Token.UINT:
+				case Token.LONG:
+				case Token.ULONG:
+				case Token.FLOAT:
+				case Token.DOUBLE:
+				case Token.STRING:
+				case Token.IDENTIFIER:
+					return ParseBeginIdentifier(attr);
 				default:
 					// TODO:
 					Error("未知Token:" + m_current);
@@ -172,6 +194,88 @@ namespace LeeLang
 			}
 			Expect(Token.CLOSE_BRACE);
 			return space;
+		}
+
+		public Statement ParseClass(Attributes attr)
+		{
+			var key = m_current;
+			Next();
+			NamesExpression name = ParseNamesExpression();
+			if (name.IsEmpty)
+				Error("期望一个名字。");
+
+			ClassStatement result = new ClassStatement(attr, key, name);
+			if (m_current.token == Token.COLON)
+			{
+				Next();
+				name = ParseNamesExpression();
+
+				if (name.IsEmpty)
+					Error("期望一个名字。");
+
+				result.base_type = name;
+			}
+
+			if (m_current.token != Token.OPEN_BRACE)
+				return new ErrorStatement();
+			Next();
+
+			while (m_current.token != Token.EOF && m_current.token != Token.CLOSE_BRACE)
+			{
+				result.members.Add(ParseStatement());
+			}
+			Expect(Token.CLOSE_BRACE);
+			return result;
+		}
+
+		public Statement ParseEnum(Attributes attr)
+		{
+			var key = m_current;
+			Next();
+			NamesExpression name = ParseNamesExpression();
+			if (name.IsEmpty)
+				Error("期望一个名字。");
+
+			EnumStatement result = new EnumStatement(attr, key, name);
+			if (m_current.token == Token.COLON)
+			{
+				Next();
+				name = ParseNamesExpression();
+
+				if (name.IsEmpty)
+					Error("期望一个名字。");
+
+				result.base_type = name;
+			}
+
+			if (m_current.token != Token.OPEN_BRACE)
+				return new ErrorStatement();
+			Next();
+
+			while (m_current.token != Token.EOF && m_current.token != Token.CLOSE_BRACE)
+			{
+				result.members.Add(ParseExpression());
+				if (m_current.token == Token.COMMA)
+					Next();
+				else if (m_current.token != Token.CLOSE_BRACE)
+				{
+					Error("不期望的Token:" + m_current);
+					Next();
+				}
+			}
+			Expect(Token.CLOSE_BRACE);
+			return result;
+		}
+
+		public Statement ParseBeginIdentifier(Attributes attr)
+		{
+			NamesExpression a = ParseNamesExpression();
+			return null;
+		}
+
+		public Statement ParseExpression()
+		{
+			return null;
 		}
 
 		public NamesExpression ParseNamesExpression()
