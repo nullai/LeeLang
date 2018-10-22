@@ -55,7 +55,7 @@ namespace LeeLang
 
 			while (m_current.token != Token.EOF)
 			{
-				result.members.Add(ParseStatement());
+				result.members.Add(ParseTypeStatement());
 			}
 
 			return result;
@@ -85,7 +85,7 @@ namespace LeeLang
 				Error(v.loc, "不支持此属性:" + v);
 			}
 		}
-		public Statement ParseStatement()
+		public Statement ParseTypeStatement()
 		{
 			Attributes attr = null;
 			_begin:
@@ -190,7 +190,7 @@ namespace LeeLang
 			NamespaceStatement space = new NamespaceStatement(name);
 			while (m_current.token != Token.EOF && m_current.token != Token.CLOSE_BRACE)
 			{
-				space.members.Add(ParseStatement());
+				space.members.Add(ParseTypeStatement());
 			}
 			Expect(Token.CLOSE_BRACE);
 			return space;
@@ -207,13 +207,20 @@ namespace LeeLang
 			ClassStatement result = new ClassStatement(attr, key, name);
 			if (m_current.token == Token.COLON)
 			{
-				Next();
-				name = ParseNamesExpression();
+				result.base_type = new List<NamesExpression>();
+				do
+				{
+					Next();
+					name = ParseNamesExpression();
 
-				if (name.IsEmpty)
-					Error("期望一个名字。");
+					if (name.IsEmpty)
+					{
+						Error("期望一个名字。");
+						break;
+					}
 
-				result.base_type = name;
+					result.base_type.Add(name);
+				} while (m_current.token == Token.COMMA);
 			}
 
 			if (m_current.token != Token.OPEN_BRACE)
@@ -222,7 +229,7 @@ namespace LeeLang
 
 			while (m_current.token != Token.EOF && m_current.token != Token.CLOSE_BRACE)
 			{
-				result.members.Add(ParseStatement());
+				result.members.Add(ParseTypeStatement());
 			}
 			Expect(Token.CLOSE_BRACE);
 			return result;
@@ -239,13 +246,20 @@ namespace LeeLang
 			EnumStatement result = new EnumStatement(attr, key, name);
 			if (m_current.token == Token.COLON)
 			{
-				Next();
-				name = ParseNamesExpression();
+				result.base_type = new List<NamesExpression>();
+				do
+				{
+					Next();
+					name = ParseNamesExpression();
 
-				if (name.IsEmpty)
-					Error("期望一个名字。");
+					if (name.IsEmpty)
+					{
+						Error("期望一个名字。");
+						break;
+					}
 
-				result.base_type = name;
+					result.base_type.Add(name);
+				} while (m_current.token == Token.COMMA);
 			}
 
 			if (m_current.token != Token.OPEN_BRACE)
@@ -270,6 +284,110 @@ namespace LeeLang
 		public Statement ParseBeginIdentifier(Attributes attr)
 		{
 			NamesExpression a = ParseNamesExpression();
+			switch (m_current.token)
+			{
+				case Token.IDENTIFIER:
+					return ParseDeclare(attr, a, ParseNamesExpression());
+				case Token.OPEN_PARENS:
+					return ParseDeclareMethod(attr, null, a);
+				default:
+					Error("不期望的Token:" + m_current);
+					return new ErrorStatement();
+			}
+		}
+
+		public Statement ParseDeclare(Attributes attr, NamesExpression type, NamesExpression name)
+		{
+			switch (m_current.token)
+			{
+				case Token.OPEN_PARENS:
+					return ParseDeclareMethod(attr, type, name);
+				case Token.ASSIGN:
+				case Token.SEMICOLON:
+					return ParseDeclareField(attr, type, name);
+				case Token.OPEN_BRACE:
+					return ParseDeclareProperty(attr, type, name);
+				default:
+					Error("不期望的Token:" + m_current);
+					return new ErrorStatement();
+			}
+		}
+
+		public Statement ParseDeclareMethod(Attributes attr, NamesExpression type, NamesExpression name)
+		{
+			MethodStatement result = new MethodStatement(attr, type, name);
+			Expect(Token.OPEN_PARENS);
+			if (m_current.token != Token.CLOSE_PARENS)
+			{
+				while (true)
+				{
+					var p = ParseParameter();
+					if (p == null)
+						Error("期望参数类型");
+					else
+						result.AddParameter(p);
+
+					if (m_current.token != Token.COMMA)
+						break;
+					Next();
+				}
+			}
+			Expect(Token.CLOSE_PARENS);
+
+			if (m_current.token == Token.OPEN_BRACE)
+			{
+				Next();
+
+				result.body = new List<Statement>();
+				while (m_current.token != Token.EOF && m_current.token != Token.CLOSE_BRACE)
+				{
+					result.body.Add(ParseExpressionStatement());
+				}
+
+				Expect(Token.CLOSE_BRACE);
+			}
+			return result;
+		}
+
+		public Statement ParseDeclareField(Attributes attr, NamesExpression type, NamesExpression name)
+		{
+			FieldStatement result = new FieldStatement(attr, type, name);
+			if (m_current.token == Token.ASSIGN)
+			{
+				Next();
+				result.value = ParseExpression();
+			}
+			Expect(Token.SEMICOLON);
+			return result;
+		}
+
+		public Statement ParseDeclareProperty(Attributes attr, NamesExpression type, NamesExpression name)
+		{
+			return null;
+		}
+
+		public ParameterStatement ParseParameter()
+		{
+			Attributes attr = null;
+			while (m_current.token == Token.IN || m_current.token == Token.OUT || m_current.token == Token.THIS)
+			{
+				attr = AddAttribute(attr, m_current);
+				Next();
+			}
+			var type = ParseNamesExpression();
+			if (type.IsEmpty)
+			{
+				RejectAttribute(attr);
+				return null;
+			}
+
+			var name = ParseNamesExpression();
+
+			return new ParameterStatement(attr, type, name);
+		}
+
+		public Statement ParseExpressionStatement()
+		{
 			return null;
 		}
 
