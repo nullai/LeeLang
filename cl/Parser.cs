@@ -288,6 +288,8 @@ namespace LeeLang
 			{
 				case Token.IDENTIFIER:
 					return ParseDeclare(attr, a, ParseNamesExpression());
+				case Token.THIS:
+					return ParseDeclareProperty(attr, a, ParseNamesExpression());
 				case Token.OPEN_PARENS:
 					return ParseDeclareMethod(attr, null, a);
 				default:
@@ -306,6 +308,7 @@ namespace LeeLang
 				case Token.SEMICOLON:
 					return ParseDeclareField(attr, type, name);
 				case Token.OPEN_BRACE:
+				case Token.ARROW:
 					return ParseDeclareProperty(attr, type, name);
 				default:
 					Error("不期望的Token:" + m_current);
@@ -333,7 +336,11 @@ namespace LeeLang
 				}
 			}
 			Expect(Token.CLOSE_PARENS);
+			return ParseMethodBody(result);
+		}
 
+		public Statement ParseMethodBody(MethodStatement result)
+		{
 			if (m_current.token == Token.OPEN_BRACE)
 			{
 				Next();
@@ -346,6 +353,8 @@ namespace LeeLang
 
 				Expect(Token.CLOSE_BRACE);
 			}
+			else
+				Expect(Token.SEMICOLON);
 			return result;
 		}
 
@@ -363,7 +372,58 @@ namespace LeeLang
 
 		public Statement ParseDeclareProperty(Attributes attr, NamesExpression type, NamesExpression name)
 		{
-			return null;
+			PropertyStatement result = new PropertyStatement(attr, type, name);
+			// TODO:array[]
+			if (m_current.token == Token.ARROW)
+			{
+				Next();
+
+				// TODO:=>
+			}
+
+			Expect(Token.OPEN_BRACE);
+
+			while (true)
+			{
+				attr = null;
+				while (m_current.token == Token.PUBLIC || m_current.token == Token.PRIVATE || m_current.token == Token.PROTECTED || m_current.token == Token.INTERNAL)
+				{
+					attr = AddAttribute(attr, m_current);
+					Next();
+				}
+
+				if (m_current.token != Token.IDENTIFIER)
+					break;
+
+				MethodStatement method;
+				switch (m_current.value)
+				{
+					case "get":
+						method = new MethodStatement(attr, type, new NamesExpression(m_current));
+						Next();
+						ParseMethodBody(method);
+						result.value.Add(method);
+						break;
+					case "set":
+						method = new MethodStatement(attr, new NamesExpression("void"), new NamesExpression(m_current));
+						method.AddParameter(new ParameterStatement(null, type, new NamesExpression("value")));
+						Next();
+						ParseMethodBody(method);
+						result.value.Add(method);
+						break;
+					default:
+						Error("不支持的属性方法:" + m_current.value);
+						method = new MethodStatement(attr, new NamesExpression("void"), new NamesExpression(m_current));
+						Next();
+						ParseMethodBody(method);
+						result.value.Add(method);
+						break;
+				}
+			}
+
+			Expect(Token.CLOSE_BRACE);
+
+			return result;
 		}
 
 		public ParameterStatement ParseParameter()
@@ -418,6 +478,7 @@ namespace LeeLang
 					case Token.DOUBLE:
 					case Token.STRING:
 					case Token.IDENTIFIER:
+					case Token.THIS:
 						result.Add(m_current);
 						Next();
 						break;

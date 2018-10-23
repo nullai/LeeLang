@@ -81,7 +81,7 @@ namespace LeeLang
 		WHERE,
 		WHILE,
 		PARTIAL,
-		ARROW,
+		ARROW,			// =>
 		OPEN_BRACE,		// {
 		CLOSE_BRACE,	// }
 		OPEN_BRACKET,	// [
@@ -108,8 +108,8 @@ namespace LeeLang
 		DIV,			// /
 		XOR,			// ^
 		INTERR,			// ?
-		OP_INC,
-		OP_DEC,
+		OP_INC,			// ++
+		OP_DEC,			// --
 		POST_INC,
 		POST_DEC,
 		OP_SHIFT_LEFT,

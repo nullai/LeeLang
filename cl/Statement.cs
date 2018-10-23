@@ -100,6 +100,21 @@ namespace LeeLang
 		}
 	}
 
+	public class PropertyStatement : Statement
+	{
+		public Attributes attr;
+		public NamesExpression type;
+		public NamesExpression name;
+		public List<MethodStatement> value = new List<MethodStatement>();
+
+		public PropertyStatement(Attributes attr, NamesExpression type, NamesExpression name)
+		{
+			this.attr = attr;
+			this.type = type;
+			this.name = name;
+		}
+	}
+
 	public class ParameterStatement : Statement
 	{
 		public Attributes attr;

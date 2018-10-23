@@ -21,6 +21,21 @@ namespace LeeLang
 		{
 			names.Add(val);
 		}
+
+		public NamesExpression()
+		{
+
+		}
+
+		public NamesExpression(LocatedToken name)
+		{
+			names.Add(name);
+		}
+
+		public NamesExpression(string name)
+		{
+			names.Add(new LocatedToken(name, Location.Null));
+		}
 	}
 }
 
