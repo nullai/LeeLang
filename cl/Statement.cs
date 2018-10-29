@@ -16,6 +16,11 @@ namespace LeeLang
 	{
 	}
 
+	public class BlockStatement : Statement
+	{
+		public List<Statement> values = new List<Statement>();
+	}
+
 	public class FileStatement : Statement
 	{
 		public string file_name;
@@ -136,7 +141,7 @@ namespace LeeLang
 		public NamesExpression type;
 		public NamesExpression name;
 		public List<ParameterStatement> parameters;
-		public List<Statement> body;
+		public BlockStatement body;
 
 		public MethodStatement(Attributes attr, NamesExpression type, NamesExpression name)
 		{
@@ -150,6 +155,86 @@ namespace LeeLang
 			if (parameters == null)
 				parameters = new List<ParameterStatement>();
 			parameters.Add(param);
+		}
+	}
+
+	public class IfStatement : Statement
+	{
+		public Statement cond;
+		public Statement body;
+
+		public IfStatement(Statement cond)
+		{
+			this.cond = cond;
+		}
+	}
+
+	public class ElseStatement : Statement
+	{
+		public Statement body;
+
+		public ElseStatement()
+		{
+		}
+	}
+
+	public class ForStatement : Statement
+	{
+		public Statement init;
+		public Statement cond;
+		public Statement iter;
+		public Statement body;
+
+		public ForStatement(Statement init, Statement cond, Statement iter)
+		{
+			this.init = init;
+			this.cond = cond;
+			this.iter = iter;
+		}
+	}
+
+	public class WhileStatement : Statement
+	{
+		public Statement cond;
+		public Statement body;
+
+		public WhileStatement(Statement cond)
+		{
+			this.cond = cond;
+		}
+	}
+
+	public class DoStatement : Statement
+	{
+		public Statement cond;
+		public Statement body;
+
+		public DoStatement()
+		{
+		}
+	}
+
+	public class ReturnStatement : Statement
+	{
+		public Statement value;
+
+		public ReturnStatement(Statement value)
+		{
+			this.value = value;
+		}
+	}
+
+	public class BreakStatement : Statement
+	{
+		public BreakStatement()
+		{
+		}
+	}
+
+	public class ContinueStatement : Statement
+	{
+		public ContinueStatement()
+		{
 		}
 	}
 }

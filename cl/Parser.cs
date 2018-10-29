@@ -26,12 +26,18 @@ namespace LeeLang
 			if (m_current.token == token)
 				m_current = m_tokener.Next();
 		}
-		public void Expect(Token token)
+		public bool Expect(Token token)
 		{
 			if (m_current.token == token)
+			{
 				m_current = m_tokener.Next();
+				return true;
+			}
 			else
+			{
 				Error("丢失:" + token);
+				return false;
+			}
 		}
 		public void Error(string msg)
 		{
@@ -342,17 +348,7 @@ namespace LeeLang
 		public Statement ParseMethodBody(MethodStatement result)
 		{
 			if (m_current.token == Token.OPEN_BRACE)
-			{
-				Next();
-
-				result.body = new List<Statement>();
-				while (m_current.token != Token.EOF && m_current.token != Token.CLOSE_BRACE)
-				{
-					result.body.Add(ParseExpressionStatement());
-				}
-
-				Expect(Token.CLOSE_BRACE);
-			}
+				result.body = ParseBlockStatement();
 			else
 				Expect(Token.SEMICOLON);
 			return result;
@@ -448,7 +444,153 @@ namespace LeeLang
 
 		public Statement ParseExpressionStatement()
 		{
+			switch (m_current.token)
+			{
+				case Token.SEMICOLON:
+					Next();
+					return new EmptyStatement();
+				case Token.OPEN_BRACE:
+					return ParseBlockStatement();
+				case Token.IF:
+					return ParseIfStatement();
+				case Token.ELSE:
+					return ParseElseStatement();
+				case Token.FOR:
+					return ParseForStatement();
+				case Token.WHILE:
+					return ParseWhileStatement();
+				case Token.DO:
+					return ParseDoStatement();
+				case Token.RETURN:
+					return ParseReturnStatement();
+				case Token.BREAK:
+					Next();
+					Expect(Token.SEMICOLON);
+					return new BreakStatement();
+				case Token.CONTINUE:
+					Next();
+					Expect(Token.SEMICOLON);
+					return new ContinueStatement();
+			}
+
+			// TODO:
 			return null;
+		}
+
+		public BlockStatement ParseBlockStatement()
+		{
+			BlockStatement result = new BlockStatement();
+			Expect(Token.OPEN_BRACE);
+
+			while (m_current.token != Token.EOF && m_current.token != Token.CLOSE_BRACE)
+			{
+				result.values.Add(ParseExpressionStatement());
+			}
+
+			Expect(Token.CLOSE_BRACE);
+			return result;
+		}
+
+		public Statement ParseIfStatement()
+		{
+			Expect(Token.IF);
+
+			if (!Expect(Token.OPEN_PARENS))
+			{
+				return new ErrorStatement();
+			}
+			Next();
+			Statement cond = ParseExpression();
+			Expect(Token.CLOSE_PARENS);
+
+			IfStatement result = new IfStatement(cond);
+			result.body = ParseExpressionStatement();
+
+			return result;
+		}
+
+		public Statement ParseElseStatement()
+		{
+			Expect(Token.ELSE);
+
+			ElseStatement result = new ElseStatement();
+			result.body = ParseExpressionStatement();
+
+			return result;
+		}
+
+		public Statement ParseForStatement()
+		{
+			Expect(Token.FOR);
+
+			if (!Expect(Token.OPEN_PARENS))
+			{
+				return new ErrorStatement();
+			}
+			Next();
+			Statement init = null;
+			Statement cond = null;
+			Statement iter = null;
+			if (m_current.token != Token.SEMICOLON)
+				init = ParseExpressionStatement();
+			Expect(Token.SEMICOLON);
+			if (m_current.token != Token.SEMICOLON)
+				cond = ParseExpression();
+			Expect(Token.SEMICOLON);
+			if (m_current.token != Token.CLOSE_PARENS)
+				iter = ParseExpressionStatement();
+			Expect(Token.CLOSE_PARENS);
+
+			ForStatement result = new ForStatement(init, cond, iter);
+			result.body = ParseExpressionStatement();
+
+			return result;
+		}
+
+		public Statement ParseWhileStatement()
+		{
+			Expect(Token.WHILE);
+
+			if (!Expect(Token.OPEN_PARENS))
+			{
+				return new ErrorStatement();
+			}
+			Next();
+			Statement cond = ParseExpression();
+			Expect(Token.CLOSE_PARENS);
+
+			WhileStatement result = new WhileStatement(cond);
+			result.body = ParseExpressionStatement();
+
+			return result;
+		}
+
+		public Statement ParseDoStatement()
+		{
+			Expect(Token.DO);
+
+			DoStatement result = new DoStatement();
+			result.body = ParseExpressionStatement();
+			if (Expect(Token.WHILE))
+			{
+				if (Expect(Token.OPEN_PARENS))
+				{
+					Next();
+					result.cond = ParseExpression();
+					Expect(Token.CLOSE_PARENS);
+				}
+			}
+
+			return result;
+		}
+
+		public Statement ParseReturnStatement()
+		{
+			Expect(Token.RETURN);
+
+			ReturnStatement result = new ReturnStatement(ParseExpression());
+			Expect(Token.SEMICOLON);
+			return result;
 		}
 
 		public Statement ParseExpression()
