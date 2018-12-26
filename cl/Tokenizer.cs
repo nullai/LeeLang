@@ -55,7 +55,7 @@ namespace LeeLang
 		PRIVATE,
 		PROTECTED,
 		PUBLIC,
-		WEEK,
+		REF,
 		RETURN,
 		SBYTE,
 		SEALED,
@@ -135,18 +135,13 @@ namespace LeeLang
 		IDENTIFIER,
 	}
 
-	public class LocatedToken
+	public class TokenValue
 	{
 		public Location loc;
-		public string value;
 		public Token token;
+		public string value;
 
-		public LocatedToken(string val, string file, int row, int column)
-			: this(val, new Location(file, row, column))
-		{
-		}
-
-		public LocatedToken(string val, Location loc)
+		public TokenValue(string val, Location loc)
 		{
 			this.loc = loc;
 			this.value = val;
@@ -157,12 +152,7 @@ namespace LeeLang
 				token = Token.EOF;
 		}
 
-		public LocatedToken(Token token, string val, string file, int row, int column)
-			: this(token, val, new Location(file, row, column))
-		{
-		}
-
-		public LocatedToken(Token token, string val, Location loc)
+		public TokenValue(Token token, string val, Location loc)
 		{
 			this.token = token;
 			this.loc = loc;
@@ -171,7 +161,7 @@ namespace LeeLang
 
 		public override string ToString()
 		{
-			return value;
+			return GetName(token);
 		}
 
 		public static Token TokenFromName(string name)
@@ -268,8 +258,8 @@ namespace LeeLang
 					return Token.PROTECTED;
 				case "public":
 					return Token.PUBLIC;
-				case "week":
-					return Token.WEEK;
+				case "ref":
+					return Token.REF;
 				case "return":
 					return Token.RETURN;
 				case "sbyte":
@@ -414,117 +404,10 @@ namespace LeeLang
 					return Token.IDENTIFIER;
 			}
 		}
-	}
-	public struct Tokenizer
-	{
-		public SourceFile file;
-		public int curIndex;
 
-		public LocatedToken Next()
+		public static string GetName(Token token)
 		{
-			int idx = curIndex++;
-			if (curIndex >= file.Tokens.Count)
-				--curIndex;
-			return file.Tokens[idx];
-		}
-		public LocatedToken Current => file.Tokens[curIndex];
-		public void Back()
-		{
-			--curIndex;
-		}
-
-		public void Fixup()
-		{
-			curIndex = 0;
-			CloseToken(Token.EOF, Token.EOF);
-			curIndex = 0;
-		}
-
-		public int Backup()
-		{
-			return curIndex;
-		}
-		public void Restore(int val)
-		{
-			curIndex = val;
-		}
-
-		public void NextLine()
-		{
-			var loc = Current.loc;
-			while (curIndex < file.Tokens.Count)
-			{
-				++curIndex;
-				var now = Current.loc;
-				if (now.row != loc.row || now.File != loc.File)
-					break;
-			}
-			if (curIndex >= file.Tokens.Count)
-				--curIndex;
-		}
-
-		private bool CloseToken(Token tk, Token tk2)
-		{
-			while (true)
-			{
-				var t = file.Tokens[curIndex];
-				if (t.token == Token.EOF)
-					return false;
-				int idx = curIndex;
-				++curIndex;
-				if (t.token == tk)
-				{
-					if (tk == Token.OP_GT)
-						t.token = Token.GENERIC_GT;
-					return true;
-				}
-
-				switch (t.token)
-				{
-					case Token.OPEN_BRACE:
-						CloseToken(Token.CLOSE_BRACE, tk);
-						break;
-					case Token.OPEN_BRACKET:
-						CloseToken(Token.CLOSE_BRACKET, tk);
-						break;
-					case Token.OPEN_PARENS:
-						CloseToken(Token.CLOSE_PARENS, tk);
-						break;
-					case Token.OP_LT:
-						if (idx > 0 && file.Tokens[idx - 1].token != Token.OPERATOR)
-						{
-							if (CloseToken(Token.OP_GT, tk))
-								t.token = Token.GENERIC_LT;
-						}
-						break;
-					case Token.CLOSE_BRACE:
-						--curIndex;
-						return false;
-					case Token.CLOSE_BRACKET:
-					case Token.CLOSE_PARENS:
-					case Token.SEMICOLON:
-						if (tk == Token.OP_GT)
-						{
-							--curIndex;
-							return false;
-						}
-						break;
-					case Token.OP_SHIFT_RIGHT:
-						if (tk == Token.OP_GT && tk2 == Token.OP_GT)
-						{
-							var a = new LocatedToken(Token.GENERIC_GT, ">", t.loc);
-							var b = new LocatedToken(Token.GENERIC_GT, ">", t.loc.NextColumn);
-
-							file.Tokens.RemoveAt(idx);
-							file.Tokens.Insert(idx, a);
-							file.Tokens.Insert(idx + 1, b);
-							return true;
-						}
-						break;
-					case Token.GENERIC_GT:
-						return true;
-				}
-			}
+			return token.ToString();
 		}
 	}
 }

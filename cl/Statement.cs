@@ -3,6 +3,39 @@ using System.Collections.Generic;
 
 namespace LeeLang
 {
+	[Flags]
+	public enum CommonAttribute
+	{
+		NONE = 0,
+		PUBLIC = 1 << 0,
+		PROTECTED = 1 << 1,
+		PRIVATE = 1 << 2,
+		STATIC = 1 << 3,
+		CONST = 1 << 4,
+		ABSTRACT = 1 << 5,
+		EXPLICIT = 1 << 6,
+		EXTERN = 1 << 7,
+		FINALLY = 1 << 8,
+		IMPLICIT = 1 << 9,
+		INTERFACE = 1 << 10,
+		INTERNAL = 1 << 11,
+		OVERRIDE = 1 << 12,
+		SEALED = 1 << 13,
+		VIRTUAL = 1 << 14,
+		VOLATILE = 1 << 15,
+		PARTIAL = 1 << 16,
+	}
+
+	[Flags]
+	public enum ParamAttribute
+	{
+		NONE = 0,
+		IN = 1,
+		OUT = 2,
+		REF = 4,
+		PARAMS = 8,
+		THIS = 16,
+	}
 	public abstract class Statement
 	{
 
@@ -14,6 +47,11 @@ namespace LeeLang
 
 	public class EmptyStatement : Statement
 	{
+	}
+
+	public class AttributeStatement : Statement
+	{
+
 	}
 
 	public class BlockStatement : Statement
@@ -34,70 +72,51 @@ namespace LeeLang
 
 	public class UsingStatement : Statement
 	{
-		public string name;
-		public NamesExpression value;
+		public NameExpression name;
+		public Expression value;
 
-		public UsingStatement(string name, NamesExpression value)
+		public UsingStatement(NameExpression name, Expression value)
 		{
 			this.name = name;
 			this.value = value;
 		}
-
 	}
 
 	public class NamespaceStatement : Statement
 	{
-		public NamesExpression name;
+		public Expression name;
 		public List<Statement> members = new List<Statement>();
 
-		public NamespaceStatement(NamesExpression name)
+		public NamespaceStatement(Expression name)
 		{
 			this.name = name;
 		}
-
 	}
 
-	public class ClassStatement : Statement
+	public class TypeStatement : Statement
 	{
-		public Attributes attr;
-		public LocatedToken key;
-		public NamesExpression name;
-		public List<NamesExpression> base_type;
+		public Token mToken;
+		public CommonAttribute attr;
+		public Expression name;
+		public List<Expression> base_type;
 		public List<Statement> members = new List<Statement>();
 
-		public ClassStatement(Attributes attr, LocatedToken key, NamesExpression name)
+		public TypeStatement(CommonAttribute attr, Token token, Expression name)
 		{
+			this.mToken = token;
 			this.attr = attr;
-			this.key = key;
-			this.name = name;
-		}
-
-	}
-
-	public class EnumStatement : Statement
-	{
-		public Attributes attr;
-		public LocatedToken key;
-		public NamesExpression name;
-		public List<NamesExpression> base_type;
-		public List<Statement> members = new List<Statement>();
-
-		public EnumStatement(Attributes attr, LocatedToken key, NamesExpression name)
-		{
-			this.attr = attr;
-			this.key = key;
 			this.name = name;
 		}
 	}
 
 	public class FieldStatement : Statement
 	{
-		public Attributes attr;
-		public NamesExpression type;
-		public NamesExpression name;
-		public Statement value;
+		public CommonAttribute attr;
+		public Expression type;
+		public NameExpression name;
+		public Expression value;
 
-		public FieldStatement(Attributes attr, NamesExpression type, NamesExpression name)
+		public FieldStatement(CommonAttribute attr, Expression type, NameExpression name)
 		{
 			this.attr = attr;
 			this.type = type;
@@ -105,14 +124,26 @@ namespace LeeLang
 		}
 	}
 
+	public class EnumFieldStatement : Statement
+	{
+		public NameExpression name;
+		public Expression value;
+
+		public EnumFieldStatement(NameExpression name, Expression value)
+		{
+			this.name = name;
+			this.value = value;
+		}
+	}
+
 	public class PropertyStatement : Statement
 	{
-		public Attributes attr;
-		public NamesExpression type;
-		public NamesExpression name;
+		public CommonAttribute attr;
+		public Expression type;
+		public NameExpression name;
 		public List<MethodStatement> value = new List<MethodStatement>();
 
-		public PropertyStatement(Attributes attr, NamesExpression type, NamesExpression name)
+		public PropertyStatement(CommonAttribute attr, Expression type, NameExpression name)
 		{
 			this.attr = attr;
 			this.type = type;
@@ -122,12 +153,12 @@ namespace LeeLang
 
 	public class ParameterStatement : Statement
 	{
-		public Attributes attr;
-		public NamesExpression type;
-		public NamesExpression name;
+		public CommonAttribute attr;
+		public Expression type;
+		public NameExpression name;
 		public Statement value;
 
-		public ParameterStatement(Attributes attr, NamesExpression type, NamesExpression name)
+		public ParameterStatement(CommonAttribute attr, Expression type, NameExpression name)
 		{
 			this.attr = attr;
 			this.type = type;
@@ -137,16 +168,18 @@ namespace LeeLang
 
 	public class MethodStatement : Statement
 	{
-		public Attributes attr;
-		public NamesExpression type;
-		public NamesExpression name;
+		public CommonAttribute attr;
+		public Expression type;
+		public NameExpression inter;
+		public NameExpression name;
 		public List<ParameterStatement> parameters;
 		public BlockStatement body;
 
-		public MethodStatement(Attributes attr, NamesExpression type, NamesExpression name)
+		public MethodStatement(CommonAttribute attr, Expression type, NameExpression inter, NameExpression name)
 		{
 			this.attr = attr;
 			this.type = type;
+			this.inter = inter;
 			this.name = name;
 		}
 
@@ -160,32 +193,24 @@ namespace LeeLang
 
 	public class IfStatement : Statement
 	{
-		public Statement cond;
-		public Statement body;
+		public Expression cond;
+		public Statement bodyt;
+		public Statement bodyf;
 
-		public IfStatement(Statement cond)
+		public IfStatement(Expression cond)
 		{
 			this.cond = cond;
-		}
-	}
-
-	public class ElseStatement : Statement
-	{
-		public Statement body;
-
-		public ElseStatement()
-		{
 		}
 	}
 
 	public class ForStatement : Statement
 	{
 		public Statement init;
-		public Statement cond;
+		public Expression cond;
 		public Statement iter;
 		public Statement body;
 
-		public ForStatement(Statement init, Statement cond, Statement iter)
+		public ForStatement(Statement init, Expression cond, Statement iter)
 		{
 			this.init = init;
 			this.cond = cond;
@@ -195,10 +220,10 @@ namespace LeeLang
 
 	public class WhileStatement : Statement
 	{
-		public Statement cond;
+		public Expression cond;
 		public Statement body;
 
-		public WhileStatement(Statement cond)
+		public WhileStatement(Expression cond)
 		{
 			this.cond = cond;
 		}
@@ -206,7 +231,7 @@ namespace LeeLang
 
 	public class DoStatement : Statement
 	{
-		public Statement cond;
+		public Expression cond;
 		public Statement body;
 
 		public DoStatement()
@@ -216,9 +241,9 @@ namespace LeeLang
 
 	public class ReturnStatement : Statement
 	{
-		public Statement value;
+		public Expression value;
 
-		public ReturnStatement(Statement value)
+		public ReturnStatement(Expression value)
 		{
 			this.value = value;
 		}

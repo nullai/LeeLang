@@ -10,15 +10,16 @@ namespace LeeLang
 	{
 		static void Main(string[] args)
 		{
-			SourceFile file = new SourceFile(args[0]);
+			Parser par = new Parser(args[0]);
 			try
 			{
-				file.Load();
-
-				Parser par = new Parser(file);
 				var s = par.ParseFile();
-				for (int i = 0; i < s.members.Count; i++)
-					Console.WriteLine(s.members[i].GetType().Name);
+				par.FlushError();
+				if (s != null)
+				{
+					for (int i = 0; i < s.members.Count; i++)
+						Console.WriteLine(s.members[i].GetType().Name);
+				}
 			}
 			catch(Exception ex)
 			{

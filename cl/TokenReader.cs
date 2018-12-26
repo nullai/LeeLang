@@ -14,10 +14,29 @@ namespace LeeLang
 		public int idx;
 		public int row;
 		public int column;
+		public Stack<TokenValue> close_token = new Stack<TokenValue>();
 
-		public LocatedToken LoadToken()
+		private void PopCloseToen(Token tk)
 		{
-			LocatedToken r;
+			while (close_token.Count > 0)
+			{
+				var p = close_token.Peek();
+				if (p.token == tk)
+				{
+					close_token.Pop();
+					break;
+				}
+				if (p.token == Token.OP_LT)
+					close_token.Pop();
+				else
+					break;
+			}
+		}
+
+		public TokenValue LoadToken()
+		{
+			TokenValue r;
+			string val;
 			_start:
 			int x = row;
 			int y = column;
@@ -41,7 +60,8 @@ namespace LeeLang
 				case '7':
 				case '8':
 				case '9':
-					r = new LocatedToken(Token.LITERAL, LoadNumber(), file, x, y);
+					val = LoadNumber();
+					r = new TokenValue(Token.LITERAL, val, new Location(file, x, y, row, column));
 					return r;
 				case 'a':
 				case 'b':
@@ -96,50 +116,58 @@ namespace LeeLang
 				case 'Y':
 				case 'Z':
 				case '_':
-					r = new LocatedToken(LoadIdentifier(), file, x, y);
+					val = LoadIdentifier();
+					r = new TokenValue(val, new Location(file, x, y, row, column));
 					return r;
 				case '{':
-					r = new LocatedToken(Token.OPEN_BRACE, "{", file, x, y);
 					get_char();
+					r = new TokenValue(Token.OPEN_BRACE, "{", new Location(file, x, y, row, column));
+					close_token.Push(r);
 					return r;
 				case '}':
-					r = new LocatedToken(Token.CLOSE_BRACE, "}", file, x, y);
 					get_char();
+					r = new TokenValue(Token.CLOSE_BRACE, "}", new Location(file, x, y, row, column));
+					PopCloseToen(Token.OPEN_BRACE);
 					return r;
 				case '(':
-					r = new LocatedToken(Token.OPEN_PARENS, "(", file, x, y);
 					get_char();
+					r = new TokenValue(Token.OPEN_PARENS, "(", new Location(file, x, y, row, column));
+					close_token.Push(r);
 					return r;
 				case ')':
-					r = new LocatedToken(Token.CLOSE_PARENS, ")", file, x, y);
 					get_char();
+					r = new TokenValue(Token.CLOSE_PARENS, ")", new Location(file, x, y, row, column));
+					PopCloseToen(Token.OPEN_PARENS);
 					return r;
 				case '[':
-					r = new LocatedToken(Token.OPEN_BRACKET, "[", file, x, y);
 					get_char();
+					r = new TokenValue(Token.OPEN_BRACKET, "[", new Location(file, x, y, row, column));
+					close_token.Push(r);
 					return r;
 				case ']':
-					r = new LocatedToken(Token.CLOSE_BRACKET, "]", file, x, y);
 					get_char();
+					r = new TokenValue(Token.CLOSE_BRACKET, "]", new Location(file, x, y, row, column));
+					PopCloseToen(Token.OPEN_BRACKET);
 					return r;
 				case '.':
-					r = new LocatedToken(Token.DOT, ".", file, x, y);
 					get_char();
+					r = new TokenValue(Token.DOT, ".", new Location(file, x, y, row, column));
 					return r;
 				case ',':
-					r = new LocatedToken(Token.COMMA, ",", file, x, y);
 					get_char();
+					r = new TokenValue(Token.COMMA, ",", new Location(file, x, y, row, column));
 					return r;
 				case ':':
-					r = new LocatedToken(Token.COLON, ":", file, x, y);
 					get_char();
+					r = new TokenValue(Token.COLON, ":", new Location(file, x, y, row, column));
 					return r;
 				case ';':
-					r = new LocatedToken(Token.SEMICOLON, ";", file, x, y);
 					get_char();
+					r = new TokenValue(Token.SEMICOLON, ";", new Location(file, x, y, row, column));
+					PopCloseToen(Token.SEMICOLON);
 					return r;
 				case '~':
-					r = new LocatedToken(Token.TILDE, "~", file, x, y);
+					r = new TokenValue(Token.TILDE, "~", new Location(file, x, y, row, column));
 					get_char();
 					return r;
 				case '+':
@@ -147,50 +175,50 @@ namespace LeeLang
 					if (peek_char(0) == '=')
 					{
 						get_char();
-						r = new LocatedToken(Token.OP_ADD_ASSIGN, "+=", file, x, y);
+						r = new TokenValue(Token.OP_ADD_ASSIGN, "+=", new Location(file, x, y, row, column));
 					}
 					else if (peek_char(0) == '+')
 					{
 						get_char();
-						r = new LocatedToken(Token.OP_INC, "++", file, x, y);
+						r = new TokenValue(Token.OP_INC, "++", new Location(file, x, y, row, column));
 					}
 					else
-						r = new LocatedToken(Token.PLUS, "+", file, x, y);
+						r = new TokenValue(Token.PLUS, "+", new Location(file, x, y, row, column));
 					return r;
 				case '-':
 					get_char();
 					if (peek_char(0) == '=')
 					{
 						get_char();
-						r = new LocatedToken(Token.OP_SUB_ASSIGN, "-=", file, x, y);
+						r = new TokenValue(Token.OP_SUB_ASSIGN, "-=", new Location(file, x, y, row, column));
 					}
 					else if (peek_char(0) == '-')
 					{
 						get_char();
-						r = new LocatedToken(Token.OP_DEC, "--", file, x, y);
+						r = new TokenValue(Token.OP_DEC, "--", new Location(file, x, y, row, column));
 					}
 					else
-						r = new LocatedToken(Token.MINUS, "-", file, x, y);
+						r = new TokenValue(Token.MINUS, "-", new Location(file, x, y, row, column));
 					return r;
 				case '*':
 					get_char();
 					if (peek_char(0) == '=')
 					{
 						get_char();
-						r = new LocatedToken(Token.OP_MULT_ASSIGN, "*=", file, x, y);
+						r = new TokenValue(Token.OP_MULT_ASSIGN, "*=", new Location(file, x, y, row, column));
 					}
 					else
-						r = new LocatedToken(Token.STAR, "*", file, x, y);
+						r = new TokenValue(Token.STAR, "*", new Location(file, x, y, row, column));
 					return r;
 				case '%':
 					get_char();
 					if (peek_char(0) == '=')
 					{
 						get_char();
-						r = new LocatedToken(Token.OP_MOD_ASSIGN, "%=", file, x, y);
+						r = new TokenValue(Token.OP_MOD_ASSIGN, "%=", new Location(file, x, y, row, column));
 					}
 					else
-						r = new LocatedToken(Token.PERCENT, "%", file, x, y);
+						r = new TokenValue(Token.PERCENT, "%", new Location(file, x, y, row, column));
 					return r;
 				case '/':
 					get_char();
@@ -223,42 +251,42 @@ namespace LeeLang
 					if (peek_char(0) == '=')
 					{
 						get_char();
-						r = new LocatedToken(Token.OP_DIV_ASSIGN, "/=", file, x, y);
+						r = new TokenValue(Token.OP_DIV_ASSIGN, "/=", new Location(file, x, y, row, column));
 					}
 					else
-						r = new LocatedToken(Token.DIV, "/", file, x, y);
+						r = new TokenValue(Token.DIV, "/", new Location(file, x, y, row, column));
 					return r;
 				case '!':
 					get_char();
 					if (peek_char(0) == '=')
 					{
 						get_char();
-						r = new LocatedToken(Token.OP_NE, "!=", file, x, y);
+						r = new TokenValue(Token.OP_NE, "!=", new Location(file, x, y, row, column));
 					}
 					else
-						r = new LocatedToken(Token.BANG, "!", file, x, y);
+						r = new TokenValue(Token.BANG, "!", new Location(file, x, y, row, column));
 					return r;
 				case '=':
 					get_char();
 					if (peek_char(0) == '=')
 					{
 						get_char();
-						r = new LocatedToken(Token.OP_EQ, "==", file, x, y);
+						r = new TokenValue(Token.OP_EQ, "==", new Location(file, x, y, row, column));
 					}
 					else if (peek_char(0) == '>')
 					{
 						get_char();
-						r = new LocatedToken(Token.ARROW, "=>", file, x, y);
+						r = new TokenValue(Token.ARROW, "=>", new Location(file, x, y, row, column));
 					}
 					else
-						r = new LocatedToken(Token.ASSIGN, "!", file, x, y);
+						r = new TokenValue(Token.ASSIGN, "!", new Location(file, x, y, row, column));
 					return r;
 				case '<':
 					get_char();
 					if (peek_char(0) == '=')
 					{
 						get_char();
-						r = new LocatedToken(Token.OP_LE, "<=", file, x, y);
+						r = new TokenValue(Token.OP_LE, "<=", new Location(file, x, y, row, column));
 					}
 					else if (peek_char(0) == '<')
 					{
@@ -266,20 +294,34 @@ namespace LeeLang
 						if (peek_char(0) == '=')
 						{
 							get_char();
-							r = new LocatedToken(Token.OP_SHIFT_LEFT_ASSIGN, "<<=", file, x, y);
+							r = new TokenValue(Token.OP_SHIFT_LEFT_ASSIGN, "<<=", new Location(file, x, y, row, column));
 						}
 						else
-							r = new LocatedToken(Token.OP_SHIFT_LEFT, "<<", file, x, y);
+							r = new TokenValue(Token.OP_SHIFT_LEFT, "<<", new Location(file, x, y, row, column));
 					}
 					else
-						r = new LocatedToken(Token.OP_LT, "<", file, x, y);
+					{
+						r = new TokenValue(Token.OP_LT, "<", new Location(file, x, y, row, column));
+						close_token.Push(r);
+					}
 					return r;
 				case '>':
 					get_char();
+					if (close_token.Count > 0)
+					{
+						var p = close_token.Peek();
+						if (p.token == Token.OP_LT)
+						{
+							close_token.Pop();
+							p.token = Token.GENERIC_LT;
+							r = new TokenValue(Token.GENERIC_GT, ">", new Location(file, x, y, row, column));
+							return r;
+						}
+					}
 					if (peek_char(0) == '=')
 					{
 						get_char();
-						r = new LocatedToken(Token.OP_GE, ">=", file, x, y);
+						r = new TokenValue(Token.OP_GE, ">=", new Location(file, x, y, row, column));
 					}
 					else if (peek_char(0) == '>')
 					{
@@ -287,67 +329,69 @@ namespace LeeLang
 						if (peek_char(0) == '=')
 						{
 							get_char();
-							r = new LocatedToken(Token.OP_SHIFT_RIGHT_ASSIGN, ">>=", file, x, y);
+							r = new TokenValue(Token.OP_SHIFT_RIGHT_ASSIGN, ">>=", new Location(file, x, y, row, column));
 						}
 						else
-							r = new LocatedToken(Token.OP_SHIFT_RIGHT, ">>", file, x, y);
+							r = new TokenValue(Token.OP_SHIFT_RIGHT, ">>", new Location(file, x, y, row, column));
 					}
 					else
-						r = new LocatedToken(Token.OP_GT, ">", file, x, y);
+						r = new TokenValue(Token.OP_GT, ">", new Location(file, x, y, row, column));
 					return r;
 				case '&':
 					get_char();
 					if (peek_char(0) == '=')
 					{
 						get_char();
-						r = new LocatedToken(Token.OP_AND_ASSIGN, "&=", file, x, y);
+						r = new TokenValue(Token.OP_AND_ASSIGN, "&=", new Location(file, x, y, row, column));
 					}
 					else if (peek_char(0) == '&')
 					{
 						get_char();
-						r = new LocatedToken(Token.OP_AND, "&&", file, x, y);
+						r = new TokenValue(Token.OP_AND, "&&", new Location(file, x, y, row, column));
 					}
 					else
-						r = new LocatedToken(Token.BITWISE_AND, "&", file, x, y);
+						r = new TokenValue(Token.BITWISE_AND, "&", new Location(file, x, y, row, column));
 					return r;
 				case '|':
 					get_char();
 					if (peek_char(0) == '=')
 					{
 						get_char();
-						r = new LocatedToken(Token.OP_OR_ASSIGN, "|=", file, x, y);
+						r = new TokenValue(Token.OP_OR_ASSIGN, "|=", new Location(file, x, y, row, column));
 					}
 					else if (peek_char(0) == '|')
 					{
 						get_char();
-						r = new LocatedToken(Token.OP_OR, "||", file, x, y);
+						r = new TokenValue(Token.OP_OR, "||", new Location(file, x, y, row, column));
 					}
 					else
-						r = new LocatedToken(Token.BITWISE_OR, "|", file, x, y);
+						r = new TokenValue(Token.BITWISE_OR, "|", new Location(file, x, y, row, column));
 					return r;
 				case '^':
 					get_char();
 					if (peek_char(0) == '=')
 					{
 						get_char();
-						r = new LocatedToken(Token.OP_XOR_ASSIGN, "^=", file, x, y);
+						r = new TokenValue(Token.OP_XOR_ASSIGN, "^=", new Location(file, x, y, row, column));
 					}
 					else
-						r = new LocatedToken(Token.XOR, "^", file, x, y);
+						r = new TokenValue(Token.XOR, "^", new Location(file, x, y, row, column));
 					return r;
 				case '?':
 					get_char();
-					r = new LocatedToken(Token.INTERR, "?", file, x, y);
+					r = new TokenValue(Token.INTERR, "?", new Location(file, x, y, row, column));
 					return r;
 				case '\'':
 				case '\"':
-					r = new LocatedToken(Token.LITERAL, LoadString(false), file, x, y);
+					val = LoadString(false);
+					r = new TokenValue(Token.LITERAL, val, new Location(file, x, y, row, column));
 					return r;
 				case '@':
 					if (peek_char(0) == '\'' || peek_char(0) == '\"')
 					{
 						get_char();
-						r = new LocatedToken(Token.LITERAL, LoadString(true), file, x, y);
+						val = LoadString(true);
+						r = new TokenValue(Token.LITERAL, val, new Location(file, x, y, row, column));
 						return r;
 					}
 					goto default;
@@ -511,24 +555,14 @@ namespace LeeLang
 			}
 		}
 	}
-	public class SourceFile
+	public static class TokenReader
 	{
-		public string Name;
-		public string FullPathName;
-		public List<LocatedToken> Tokens;
-
-		public SourceFile(string pathName)
+		public static TokenValue[] Load(string pathname)
 		{
-			FullPathName = pathName;
-			Name = Path.GetFileName(pathName);
-		}
-
-		public void Load()
-		{
-			Tokens = new List<LocatedToken>();
-			string text = File.ReadAllText(FullPathName);
+			List<TokenValue> tokens = new List<TokenValue>();
+			string text = File.ReadAllText(pathname);
 			LoadTokenContext ctx = new LoadTokenContext();
-			ctx.file = FullPathName;
+			ctx.file = pathname;
 			ctx.text = text;
 			ctx.idx = 0;
 			ctx.row = 1;
@@ -538,9 +572,10 @@ namespace LeeLang
 				var tk = ctx.LoadToken();
 				if (tk == null)
 					break;
-				Tokens.Add(tk);
+				tokens.Add(tk);
 			}
-			Tokens.Add(new LocatedToken(Token.EOF, null, FullPathName, ctx.row, ctx.column));
+			tokens.Add(new TokenValue(Token.EOF, null, new Location(pathname, ctx.row, ctx.column, ctx.row, ctx.column)));
+			return tokens.ToArray();
 		}
 	}
 }
