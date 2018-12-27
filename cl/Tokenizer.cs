@@ -34,6 +34,7 @@ namespace LeeLang
 		FINALLY,
 		FLOAT,
 		FOR,
+		FOREACH,
 		GOTO,
 		IF,
 		IMPLICIT,
@@ -76,6 +77,7 @@ namespace LeeLang
 		USHORT,
 		USING,
 		VIRTUAL,
+		VAR,
 		VOID,
 		VOLATILE,
 		WHERE,
@@ -110,8 +112,6 @@ namespace LeeLang
 		INTERR,			// ?
 		OP_INC,			// ++
 		OP_DEC,			// --
-		POST_INC,
-		POST_DEC,
 		OP_SHIFT_LEFT,
 		OP_SHIFT_RIGHT,
 		OP_LE,
@@ -133,6 +133,7 @@ namespace LeeLang
 
 		LITERAL,
 		IDENTIFIER,
+		EXPRESSION,
 	}
 
 	public class TokenValue
@@ -216,6 +217,8 @@ namespace LeeLang
 					return Token.FLOAT;
 				case "for":
 					return Token.FOR;
+				case "foreach":
+					return Token.FOREACH;
 				case "goto":
 					return Token.GOTO;
 				case "if":
@@ -300,6 +303,8 @@ namespace LeeLang
 					return Token.USING;
 				case "virtual":
 					return Token.VIRTUAL;
+				case "var":
+					return Token.VAR;
 				case "void":
 					return Token.VOID;
 				case "volatile":

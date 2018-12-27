@@ -97,11 +97,11 @@ namespace LeeLang
 	{
 		public Token mToken;
 		public CommonAttribute attr;
-		public Expression name;
+		public NameExpression name;
 		public List<Expression> base_type;
 		public List<Statement> members = new List<Statement>();
 
-		public TypeStatement(CommonAttribute attr, Token token, Expression name)
+		public TypeStatement(CommonAttribute attr, Token token, NameExpression name)
 		{
 			this.mToken = token;
 			this.attr = attr;
@@ -115,6 +115,7 @@ namespace LeeLang
 		public Expression type;
 		public NameExpression name;
 		public Expression value;
+		public FieldStatement next;
 
 		public FieldStatement(CommonAttribute attr, Expression type, NameExpression name)
 		{
@@ -140,25 +141,28 @@ namespace LeeLang
 	{
 		public CommonAttribute attr;
 		public Expression type;
+		public NameExpression inter;
 		public NameExpression name;
+		public List<ParameterStatement> parameters;
 		public List<MethodStatement> value = new List<MethodStatement>();
 
-		public PropertyStatement(CommonAttribute attr, Expression type, NameExpression name)
+		public PropertyStatement(CommonAttribute attr, Expression type, NameExpression inter, NameExpression name)
 		{
 			this.attr = attr;
 			this.type = type;
+			this.inter = inter;
 			this.name = name;
 		}
 	}
 
 	public class ParameterStatement : Statement
 	{
-		public CommonAttribute attr;
+		public ParamAttribute attr;
 		public Expression type;
 		public NameExpression name;
 		public Statement value;
 
-		public ParameterStatement(CommonAttribute attr, Expression type, NameExpression name)
+		public ParameterStatement(ParamAttribute attr, Expression type, NameExpression name)
 		{
 			this.attr = attr;
 			this.type = type;
@@ -207,14 +211,27 @@ namespace LeeLang
 	{
 		public Statement init;
 		public Expression cond;
-		public Statement iter;
+		public Expression iter;
 		public Statement body;
 
-		public ForStatement(Statement init, Expression cond, Statement iter)
+		public ForStatement(Statement init, Expression cond, Expression iter)
 		{
 			this.init = init;
 			this.cond = cond;
 			this.iter = iter;
+		}
+	}
+
+	public class ForeachStatement : Statement
+	{
+		public Statement iter;
+		public Expression value;
+		public Statement body;
+
+		public ForeachStatement(Statement iter, Expression value)
+		{
+			this.iter = iter;
+			this.value = value;
 		}
 	}
 
@@ -236,6 +253,16 @@ namespace LeeLang
 
 		public DoStatement()
 		{
+		}
+	}
+	public class SwitchStatement : Statement
+	{
+		public Expression value;
+		public BlockStatement body;
+
+		public SwitchStatement(Expression value)
+		{
+			this.value = value;
 		}
 	}
 
@@ -260,6 +287,38 @@ namespace LeeLang
 	{
 		public ContinueStatement()
 		{
+		}
+	}
+	public class LabelStatement : Statement
+	{
+		TokenValue name;
+		public LabelStatement(TokenValue name)
+		{
+			this.name = name;
+		}
+	}
+	public class GotoStatement : Statement
+	{
+		TokenValue name;
+		public GotoStatement(TokenValue name)
+		{
+			this.name = name;
+		}
+	}
+	public class CaseStatement : Statement
+	{
+		public Expression value;
+		public CaseStatement(Expression value)
+		{
+			this.value = value;
+		}
+	}
+	public class ExpressionStatement : Statement
+	{
+		public Expression value;
+		public ExpressionStatement(Expression value)
+		{
+			this.value = value;
 		}
 	}
 }

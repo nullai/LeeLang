@@ -12,8 +12,8 @@ namespace LeeLang
 		public string file;
 		public string text;
 		public int idx;
-		public int row;
-		public int column;
+		public int row = 1;
+		public int column = 1;
 		public Stack<TokenValue> close_token = new Stack<TokenValue>();
 
 		private void PopCloseToen(Token tk)
@@ -560,6 +560,7 @@ namespace LeeLang
 		public static TokenValue[] Load(string pathname)
 		{
 			List<TokenValue> tokens = new List<TokenValue>();
+			tokens.Add(new TokenValue(Token.EOF, null, new Location(pathname, 1, 1, 1, 1)));
 			string text = File.ReadAllText(pathname);
 			LoadTokenContext ctx = new LoadTokenContext();
 			ctx.file = pathname;
