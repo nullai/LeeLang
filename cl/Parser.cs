@@ -13,10 +13,10 @@ namespace LeeLang
 		public int mIndex = 0;
 		public Stack<List<Error>> mErrorStack = new Stack<List<Error>>();
 		private List<Error> mErrors;
-		public Parser(string pathname)
+		public Compiler mCompiler;
+		public Parser(Compiler comp)
 		{
-			mFilePath = pathname;
-			PushError();
+			mCompiler = comp;
 		}
 		public void Skip(Token token)
 		{
@@ -39,19 +39,19 @@ namespace LeeLang
 		}
 		public void Error(string msg)
 		{
-			mErrors.Add(new Error("ERROR:" + msg));
+			mErrors.Add(new Error("ERROR:" + msg, false));
 		}
 		public void Error(Location pos, string msg)
 		{
-			mErrors.Add(new Error(pos, "ERROR:" + msg));
+			mErrors.Add(new Error(pos, "ERROR:" + msg, false));
 		}
 		public void Waring(string msg)
 		{
-			mErrors.Add(new Error("WARING:" + msg));
+			mErrors.Add(new Error("WARING:" + msg, true));
 		}
 		public void Waring(Location pos, string msg)
 		{
-			mErrors.Add(new Error(pos, "WARING:" + msg));
+			mErrors.Add(new Error(pos, "WARING:" + msg, true));
 		}
 		public void FlushError()
 		{
@@ -64,15 +64,24 @@ namespace LeeLang
 				else
 					errs.InsertRange(0, e);
 			}
-			PushError(errs);
 
 			for (int i = 0; i < errs.Count; i++)
 			{
 				var e = errs[i];
-				if (e.pos.IsValid)
-					Console.WriteLine("{0}: {1}", e.pos.ToString(), e.msg);
+				if (e.warn)
+				{
+					if (e.pos.IsValid)
+						mCompiler.OutputWarning(string.Format("{0}: {1}", e.pos.ToString(), e.msg));
+					else
+						mCompiler.OutputWarning(e.msg);
+				}
 				else
-					Console.WriteLine(e.msg);
+				{
+					if (e.pos.IsValid)
+						mCompiler.OutputError(string.Format("{0}: {1}", e.pos.ToString(), e.msg));
+					else
+						mCompiler.OutputError(e.msg);
+				}
 			}
 		}
 		private void PushError()
@@ -93,8 +102,10 @@ namespace LeeLang
 		{
 			mErrors.AddRange(errs);
 		}
-		public FileStatement ParseFile()
+		public FileStatement ParseFile(string pathname)
 		{
+			mFilePath = pathname;
+			PushError();
 			try
 			{
 				mTokens = TokenReader.Load(mFilePath);
@@ -119,7 +130,7 @@ namespace LeeLang
 					mIndex = next;
 				}
 			}
-
+			FlushError();
 			return result;
 		}
 
@@ -151,6 +162,7 @@ namespace LeeLang
 						case Token.CLASS:
 						case Token.STRUCT:
 						case Token.ENUM:
+						case Token.INTERFACE:
 							r = ParseTypeStatement(attr);
 							break;
 						default:
@@ -342,7 +354,7 @@ namespace LeeLang
 			{
 				case Token.SEMICOLON:
 					++mIndex;
-					return null;
+					return new EmptyStatement();
 				case Token.OPEN_BRACE:
 					return ParseBlockStatement();
 				case Token.IF:
@@ -682,43 +694,43 @@ namespace LeeLang
 						break;
 					case Token.OP_MULT_ASSIGN:
 						++mIndex;
-						expr = new MultAssignExpression(expr, ParseExpression());
+						expr = new CompoundAssign(BinaryExpression.Operator.Multiply, expr, ParseExpression());
 						break;
 					case Token.OP_DIV_ASSIGN:
 						++mIndex;
-						expr = new DivAssignExpression(expr, ParseExpression());
+						expr = new CompoundAssign(BinaryExpression.Operator.Division, expr, ParseExpression());
 						break;
 					case Token.OP_MOD_ASSIGN:
 						++mIndex;
-						expr = new ModAssignExpression(expr, ParseExpression());
+						expr = new CompoundAssign(BinaryExpression.Operator.Modulus, expr, ParseExpression());
 						break;
 					case Token.OP_ADD_ASSIGN:
 						++mIndex;
-						expr = new AddAssignExpression(expr, ParseExpression());
+						expr = new CompoundAssign(BinaryExpression.Operator.Addition, expr, ParseExpression());
 						break;
 					case Token.OP_SUB_ASSIGN:
 						++mIndex;
-						expr = new SubAssignExpression(expr, ParseExpression());
+						expr = new CompoundAssign(BinaryExpression.Operator.Subtraction, expr, ParseExpression());
 						break;
 					case Token.OP_SHIFT_LEFT_ASSIGN:
 						++mIndex;
-						expr = new ShiftLeftAssignExpression(expr, ParseExpression());
+						expr = new CompoundAssign(BinaryExpression.Operator.LeftShift, expr, ParseExpression());
 						break;
 					case Token.OP_SHIFT_RIGHT_ASSIGN:
 						++mIndex;
-						expr = new ShiftRightAssignExpression(expr, ParseExpression());
+						expr = new CompoundAssign(BinaryExpression.Operator.RightShift, expr, ParseExpression());
 						break;
 					case Token.OP_AND_ASSIGN:
 						++mIndex;
-						expr = new AndAssignExpression(expr, ParseExpression());
+						expr = new CompoundAssign(BinaryExpression.Operator.BitwiseAnd, expr, ParseExpression());
 						break;
 					case Token.OP_XOR_ASSIGN:
 						++mIndex;
-						expr = new XorAssignExpression(expr, ParseExpression());
+						expr = new CompoundAssign(BinaryExpression.Operator.ExclusiveOr, expr, ParseExpression());
 						break;
 					case Token.OP_OR_ASSIGN:
 						++mIndex;
-						expr = new OrAssignExpression(expr, ParseExpression());
+						expr = new CompoundAssign(BinaryExpression.Operator.BitwiseOr, expr, ParseExpression());
 						break;
 				}
 			}
@@ -775,7 +787,7 @@ namespace LeeLang
 				while (mTokens[mIndex].token == Token.OP_OR)
 				{
 					++mIndex;
-					expr = new LogicOrExpression(expr, ParseLogicalAndExpression());
+					expr = new BinaryExpression(BinaryExpression.Operator.LogicalOr, expr, ParseLogicalAndExpression());
 				}
 			}
 			return expr;
@@ -789,7 +801,7 @@ namespace LeeLang
 				while (mTokens[mIndex].token == Token.OP_AND)
 				{
 					++mIndex;
-					expr = new LogicAndExpression(expr, ParseOrExpression());
+					expr = new BinaryExpression(BinaryExpression.Operator.LogicalAnd, expr, ParseOrExpression());
 				}
 			}
 			return expr;
@@ -803,7 +815,7 @@ namespace LeeLang
 				while (mTokens[mIndex].token == Token.BITWISE_OR)
 				{
 					++mIndex;
-					expr = new OrExpression(expr, ParseXorExpression());
+					expr = new BinaryExpression(BinaryExpression.Operator.BitwiseOr, expr, ParseXorExpression());
 				}
 			}
 			return expr;
@@ -816,7 +828,7 @@ namespace LeeLang
 				while (mTokens[mIndex].token == Token.XOR)
 				{
 					++mIndex;
-					expr = new XorExpression(expr, ParseAndExpression());
+					expr = new BinaryExpression(BinaryExpression.Operator.ExclusiveOr, expr, ParseAndExpression());
 				}
 			}
 			return expr;
@@ -829,7 +841,7 @@ namespace LeeLang
 				while (mTokens[mIndex].token == Token.BITWISE_AND)
 				{
 					++mIndex;
-					expr = new AndExpression(expr, ParseEqualityExpression());
+					expr = new BinaryExpression(BinaryExpression.Operator.BitwiseAnd, expr, ParseEqualityExpression());
 				}
 			}
 			return expr;
@@ -844,11 +856,11 @@ namespace LeeLang
 				{
 					case Token.OP_EQ:
 						++mIndex;
-						expr = new EqualityExpression(expr, ParseRelationalExpression());
+						expr = new BinaryExpression(BinaryExpression.Operator.Equality, expr, ParseRelationalExpression());
 						goto _loop;
 					case Token.OP_NE:
 						++mIndex;
-						expr = new NotEqualityExpression(expr, ParseRelationalExpression());
+						expr = new BinaryExpression(BinaryExpression.Operator.Inequality, expr, ParseRelationalExpression());
 						goto _loop;
 				}
 			}
@@ -864,19 +876,19 @@ namespace LeeLang
 				{
 					case Token.OP_LT:
 						++mIndex;
-						expr = new LtExpression(expr, ParseShiftExpression());
+						expr = new BinaryExpression(BinaryExpression.Operator.LessThan, expr, ParseShiftExpression());
 						goto _loop;
 					case Token.OP_GT:
 						++mIndex;
-						expr = new GtExpression(expr, ParseShiftExpression());
+						expr = new BinaryExpression(BinaryExpression.Operator.GreaterThan, expr, ParseShiftExpression());
 						goto _loop;
 					case Token.OP_LE:
 						++mIndex;
-						expr = new LeExpression(expr, ParseShiftExpression());
+						expr = new BinaryExpression(BinaryExpression.Operator.LessThanOrEqual, expr, ParseShiftExpression());
 						goto _loop;
 					case Token.OP_GE:
 						++mIndex;
-						expr = new GeExpression(expr, ParseShiftExpression());
+						expr = new BinaryExpression(BinaryExpression.Operator.GreaterThanOrEqual, expr, ParseShiftExpression());
 						goto _loop;
 				}
 			}
@@ -892,11 +904,11 @@ namespace LeeLang
 				{
 					case Token.OP_SHIFT_LEFT:
 						++mIndex;
-						expr = new ShiftLeftExpression(expr, ParseAdditiveExpression());
+						expr = new BinaryExpression(BinaryExpression.Operator.LeftShift, expr, ParseAdditiveExpression());
 						goto _loop;
 					case Token.OP_SHIFT_RIGHT:
 						++mIndex;
-						expr = new ShiftRightExpression(expr, ParseAdditiveExpression());
+						expr = new BinaryExpression(BinaryExpression.Operator.RightShift, expr, ParseAdditiveExpression());
 						goto _loop;
 				}
 			}
@@ -912,11 +924,11 @@ namespace LeeLang
 				{
 					case Token.PLUS:
 						++mIndex;
-						expr = new AddExpression(expr, ParseMultiplicativeExpression());
+						expr = new BinaryExpression(BinaryExpression.Operator.Addition, expr, ParseMultiplicativeExpression());
 						goto _loop;
 					case Token.MINUS:
 						++mIndex;
-						expr = new SubExpression(expr, ParseMultiplicativeExpression());
+						expr = new BinaryExpression(BinaryExpression.Operator.Subtraction, expr, ParseMultiplicativeExpression());
 						goto _loop;
 				}
 			}
@@ -932,15 +944,15 @@ namespace LeeLang
 				{
 					case Token.STAR:
 						++mIndex;
-						expr = new MultExpression(expr, ParseCastExpression());
+						expr = new BinaryExpression(BinaryExpression.Operator.Multiply, expr, ParseCastExpression());
 						goto _loop;
 					case Token.DIV:
 						++mIndex;
-						expr = new DivExpression(expr, ParseCastExpression());
+						expr = new BinaryExpression(BinaryExpression.Operator.Division, expr, ParseCastExpression());
 						goto _loop;
 					case Token.PERCENT:
 						++mIndex;
-						expr = new ModExpression(expr, ParseCastExpression());
+						expr = new BinaryExpression(BinaryExpression.Operator.Modulus, expr, ParseCastExpression());
 						goto _loop;
 				}
 			}
@@ -960,7 +972,7 @@ namespace LeeLang
 					if (val != null)
 					{
 						AppendErrors(PopError());
-						return new CastExpression(type, val);
+						return new TypeCastExpression(type, val);
 					}
 				}
 				PopError();
@@ -974,10 +986,10 @@ namespace LeeLang
 			{
 				case Token.OP_INC:
 					++mIndex;
-					return new IncExpression(ParseUnaryExpression());
+					return new UnaryMutator(UnaryMutator.Mode.PreIncrement, ParseUnaryExpression());
 				case Token.OP_DEC:
 					++mIndex;
-					return new DecExpression(ParseUnaryExpression());
+					return new UnaryMutator(UnaryMutator.Mode.PreDecrement, ParseUnaryExpression());
 				case Token.MINUS:
 					++mIndex;
 					return new NegExpression(ParseCastExpression());
@@ -1023,7 +1035,7 @@ namespace LeeLang
 							++mIndex;
 						}
 						Expect(Token.CLOSE_BRACKET);
-						expr = new InvokeExpression(expr, va);
+						expr = new InvocationExpression(expr, va);
 						goto _loop;
 					case Token.DOT:
 						++mIndex;
@@ -1036,11 +1048,11 @@ namespace LeeLang
 						break;
 					case Token.OP_INC:
 						++mIndex;
-						expr = new PostIncExpression(expr);
+						expr = new UnaryMutator(UnaryMutator.Mode.PostIncrement, expr);
 						goto _loop;
 					case Token.OP_DEC:
 						++mIndex;
-						expr = new PostDecExpression(expr);
+						expr = new UnaryMutator(UnaryMutator.Mode.PostDecrement, expr);
 						goto _loop;
 				}
 			}
@@ -1276,6 +1288,18 @@ namespace LeeLang
 				return null;
 
 			TypeStatement result = new TypeStatement(attr, cls_or_strct, new NameExpression(name));
+
+			if (mTokens[mIndex].token == Token.COLON)
+			{
+				result.base_type = new List<Expression>();
+				do
+				{
+					++mIndex;
+					var bs = ParseTypeExpression(true, false);
+					result.base_type.Add(bs);
+				} while (mTokens[mIndex].token == Token.COMMA);
+			}
+
 			if (!Expect(Token.OPEN_BRACE))
 				return result;
 

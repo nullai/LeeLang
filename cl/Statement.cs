@@ -41,10 +41,6 @@ namespace LeeLang
 
 	}
 
-	public class ErrorStatement : Statement
-	{
-	}
-
 	public class EmptyStatement : Statement
 	{
 	}

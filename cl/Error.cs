@@ -10,16 +10,19 @@ namespace LeeLang
 	{
 		public Location pos;
 		public string msg;
+		public bool warn;
 
-		public Error(string msg)
+		public Error(string msg, bool warn)
 		{
 			this.msg = msg;
+			this.warn = warn;
 		}
 
-		public Error(Location pos, string msg)
+		public Error(Location pos, string msg, bool warn)
 		{
 			this.pos = pos;
 			this.msg = msg;
+			this.warn = warn;
 		}
 	}
 }
