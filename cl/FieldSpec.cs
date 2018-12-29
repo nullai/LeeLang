@@ -8,9 +8,13 @@ namespace LeeLang
 {
 	public class FieldSpec : MemberSpec
 	{
-		public FieldSpec(string name, NamespaceSpec declare)
+		public TypeSpec field_type;
+		public Expression value;
+		public bool is_enum_field;
+		public FieldSpec(string name, TypeSpec type, NamespaceSpec declare)
 			: base(name, declare)
 		{
+			field_type = type;
 		}
 	}
 }

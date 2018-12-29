@@ -10,42 +10,119 @@ namespace LeeLang
 	{
 		public string fullname;
 		public Dictionary<string, List<MemberSpec>> members = new Dictionary<string, List<MemberSpec>>();
+		public List<NamespaceSpec> usings = null;
+		protected bool resolving = false;
 
 		public NamespaceSpec(string name, NamespaceSpec declare)
 			: base(name, declare)
 		{
-			fullname = declare == null ? name : declare.fullname + "." + name;
+			fullname = (declare == null || declare is FileSpec) ? name : declare.fullname + "." + name;
 		}
-
-		public override void ResolveMember(string name, List<MemberSpec> result, VerifyMember verify)
+		public virtual void AddMember(MemberSpec member, Compiler compiler)
 		{
-			List<MemberSpec> vals = GetMembers(name);
-			if (vals == null)
+			bool is_ns = member is NamespaceSpec;
+			List<MemberSpec> vals;
+			if (members.TryGetValue(member.name, out vals))
 			{
-				if (Declaring != null)
-					Declaring.ResolveMember(name, result, verify);
+				for (int i = 0; i < vals.Count; i++)
+				{
+					var item = vals[i];
+					if (item.name == member.name && item.Arity == member.Arity && item.prefix == member.prefix && (item is NamespaceSpec) == is_ns)
+					{
+						compiler.OutputError(string.Format("已经存在一个同名项\"{0}\"。", member));
+						return;
+					}
+				}
+				vals.Add(member);
+			}
+			else
+			{
+				vals = new List<MemberSpec>() { member };
+				members.Add(member.name, vals);
+			}
+		}
+		public void AddUsing(NamespaceSpec ns)
+		{
+			if (usings == null)
+			{
+				usings = new List<NamespaceSpec>() { ns };
 				return;
 			}
+			if (!usings.Contains(ns))
+				usings.Add(ns);
+		}
+		public override List<MemberSpec> ResolveName(string name)
+		{
+			if (resolving)
+				return null;
+			resolving = true;
 
-			for (int i = 0; i < vals.Count; i++)
+			List<MemberSpec> r;
+			if (members.TryGetValue(name, out r))
 			{
-				var item = vals[i];
-				if (item.name == name && item.prefix == null)
+				for (int i = 0; i < r.Count; i++)
 				{
-					if (verify == null || verify(item))
-						result.Add(item);
-					continue;
+					var item = r[i];
+					if (item.name == name && item.prefix == null)
+					{
+						resolving = false;
+						r.Clear();
+						r.Add(item);
+						return r;
+					}
 				}
 			}
 
-			if (Declaring != null)
-				Declaring.ResolveMember(name, result, verify);
-		}
-		public virtual List<MemberSpec> GetMembers(string name)
-		{
-			List<MemberSpec> r;
-			members.TryGetValue(name, out r);
+			if (usings != null)
+			{
+				for (int i = 0; i < usings.Count; i++)
+				{
+					var t = usings[i].ResolveName(name);
+					if (t != null)
+					{
+						if (r != null)
+							r.AddRange(t);
+						else
+							r = t;
+					}
+				}
+			}
+
+			if (r == null && Declaring != null)
+				r = Declaring.ResolveName(name);
+
+			resolving = false;
 			return r;
+		}
+
+		public static NamespaceSpec CreateFromName(Expression expr, NamespaceSpec declare)
+		{
+			AccessExpression a = expr as AccessExpression;
+			if (a != null)
+			{
+				NamespaceSpec left = CreateFromName(a.left, declare);
+				return new NamespaceSpec(a.name.value, left);
+			}
+
+			return new NamespaceSpec((expr as NameExpression).token.value, declare);
+		}
+	}
+
+	public class UsingSpec : MemberSpec
+	{
+		public NamespaceSpec value;
+		public UsingSpec(string name, NamespaceSpec value, NamespaceSpec declare)
+			: base(name, declare)
+		{
+			this.value = value;
+		}
+	}
+
+	public class BlockSpec : NamespaceSpec
+	{
+		public BlockSpec(NamespaceSpec declare)
+			: base(null, declare)
+		{
 		}
 	}
 }

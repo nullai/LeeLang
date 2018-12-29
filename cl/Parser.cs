@@ -156,7 +156,7 @@ namespace LeeLang
 					r = ParseNamespaceStatement();
 					break;
 				default:
-					var attr = ParseCommonAttribute();
+					var attr = ParseCommonAttribute(true);
 					switch (mTokens[mIndex].token)
 					{
 						case Token.CLASS:
@@ -179,7 +179,7 @@ namespace LeeLang
 				return;
 			do
 			{
-				var attr = ParseCommonAttribute();
+				var attr = ParseCommonAttribute(false);
 				var name = mTokens[mIndex];
 				if (!Expect(Token.IDENTIFIER))
 					break;
@@ -266,7 +266,7 @@ namespace LeeLang
 		}
 		private Statement ParseDeclareFieldStatement()
 		{
-			CommonAttribute attr = ParseCommonAttribute();
+			CommonAttribute attr = ParseCommonAttribute(false);
 			var type = ParseTypeExpression(true, false);
 			if (type == null)
 				return null;
@@ -403,7 +403,7 @@ namespace LeeLang
 					return result;
 			}
 
-			var attr = ParseCommonAttribute();
+			var attr = ParseCommonAttribute(false);
 			if (attr != CommonAttribute.NONE)
 				return ParseDeclareFieldMethodStatement(attr, null);
 
@@ -426,7 +426,7 @@ namespace LeeLang
 		}
 		private Statement ParseDeclareExpressionStatement()
 		{
-			var attr = ParseCommonAttribute();
+			var attr = ParseCommonAttribute(false);
 			Expression type = null;
 			if (attr != CommonAttribute.NONE)
 			{
@@ -585,6 +585,7 @@ namespace LeeLang
 				case Token.VAR:
 				case Token.VOID:
 				case Token.BOOL:
+				case Token.CHAR:
 				case Token.SBYTE:
 				case Token.BYTE:
 				case Token.SHORT:
@@ -1042,7 +1043,7 @@ namespace LeeLang
 						var name = mTokens[mIndex];
 						if (Expect(Token.IDENTIFIER))
 						{
-							expr = new MemberExpression(expr, new NameExpression(name));
+							expr = new AccessExpression(expr, name);
 							goto _loop;
 						}
 						break;
@@ -1150,7 +1151,7 @@ namespace LeeLang
 			Expect(Token.EXPRESSION);
 			return null;
 		}
-		private CommonAttribute ParseCommonAttribute()
+		private CommonAttribute ParseCommonAttribute(bool acc_new)
 		{
 			CommonAttribute attr = CommonAttribute.NONE;
 			while (true)
@@ -1202,6 +1203,11 @@ namespace LeeLang
 						break;
 					case Token.PARTIAL:
 						add = CommonAttribute.PARTIAL;
+						break;
+					case Token.NEW:
+						if (!acc_new)
+							return attr;
+						add = CommonAttribute.NEW;
 						break;
 					default:
 						return attr;
@@ -1288,6 +1294,19 @@ namespace LeeLang
 				return null;
 
 			TypeStatement result = new TypeStatement(attr, cls_or_strct, new NameExpression(name));
+			if (mTokens[mIndex].token == Token.GENERIC_LT)
+			{
+				result.generics = new List<TokenValue>();
+				do
+				{
+					++mIndex;
+					name = mTokens[mIndex];
+					if (Expect(Token.IDENTIFIER))
+						result.generics.Add(name);
+				} while (mTokens[mIndex].token == Token.COMMA);
+
+				Expect(Token.GENERIC_GT);
+			}
 
 			if (mTokens[mIndex].token == Token.COLON)
 			{

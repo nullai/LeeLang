@@ -12,6 +12,7 @@ namespace LeeLang
 		public string prefix;
 		public string name;
 		public NamespaceSpec Declaring;
+		public virtual int Arity => 0;
 
 		public delegate bool VerifyMember(MemberSpec member);
 
@@ -21,9 +22,9 @@ namespace LeeLang
 			this.Declaring = declare;
 		}
 
-		public virtual void ResolveMember(string name, List<MemberSpec> result, VerifyMember verify)
+		public virtual List<MemberSpec> ResolveName(string name)
 		{
-			throw new Exception("ResolveType In " + GetType().Name);
+			throw new Exception("ResolveName In " + GetType().Name);
 		}
 	}
 }

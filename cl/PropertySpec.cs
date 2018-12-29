@@ -8,10 +8,12 @@ namespace LeeLang
 {
 	public class PropertySpec : MemberSpec
 	{
-		public PropertySpec(string name, NamespaceSpec declare)
+		public TypeSpec property_type;
+		public Dictionary<string, MethodSpec> methods = new Dictionary<string, MethodSpec>();
+		public PropertySpec(string name, TypeSpec type, NamespaceSpec declare)
 			: base(name, declare)
 		{
-
+			property_type = type;
 		}
 	}
 }

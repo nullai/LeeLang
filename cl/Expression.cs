@@ -1,13 +1,37 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 
 namespace LeeLang
 {
 	public class Expression
 	{
-		public virtual void ResolveMember(ResolveContext ctx, List<MemberSpec> result, MemberSpec.VerifyMember verify)
+		public virtual List<MemberSpec> ResolveType(ResolveContext ctx)
 		{
-			throw new Exception("ResolveMember In " + GetType().Name);
+			throw new Exception("ResolveType In " + GetType().Name);
+		}
+
+		public TypeSpec ResolveToType(ResolveContext ctx)
+		{
+			var types = ResolveType(ctx);
+			if (types == null)
+				return null;
+
+			TypeSpec result = null;
+			for (int i = 0; i < types.Count; i++)
+			{
+				var t = types[i] as TypeSpec;
+				if (t == null)
+					continue;
+
+				if (result != null)
+					ctx.complier.OutputError(string.Format("不能确定是\"{0}\"或\"{1}\"。", result, t));
+				else
+					result = t;
+			}
+			if (result == null)
+				ctx.complier.OutputError(string.Format("未能找到类型或命名空间\"{0}\"(是否缺少 using 指令或程序集引用?)", this));
+			return result;
 		}
 	}
 	public class NameExpression : Expression
@@ -19,15 +43,71 @@ namespace LeeLang
 			this.token = token;
 		}
 
-		public override void ResolveMember(ResolveContext ctx, List<MemberSpec> result, MemberSpec.VerifyMember verify)
+		public override string ToString()
 		{
-			int count = result.Count;
-			ctx.scope.ResolveMember(token.value, result, verify);
-			if (result.Count == count)
+			return token.value;
+		}
+
+		public override List<MemberSpec> ResolveType(ResolveContext ctx)
+		{
+			MemberSpec type = null;
+			switch (token.token)
 			{
-				ctx.complier.OutputError(string.Format("未能找到名称\"{0}\"(是否缺少 using 指令或程序集引用?)", token.value));
-				return;
+				case Token.VOID:
+					type = BuildinTypeSpec.Void;
+					break;
+				case Token.BOOL:
+					type = BuildinTypeSpec.Bool;
+					break;
+				case Token.CHAR:
+					type = BuildinTypeSpec.Char;
+					break;
+				case Token.SBYTE:
+					type = BuildinTypeSpec.SByte;
+					break;
+				case Token.BYTE:
+					type = BuildinTypeSpec.Byte;
+					break;
+				case Token.SHORT:
+					type = BuildinTypeSpec.Short;
+					break;
+				case Token.USHORT:
+					type = BuildinTypeSpec.UShort;
+					break;
+				case Token.INT:
+					type = BuildinTypeSpec.Int;
+					break;
+				case Token.UINT:
+					type = BuildinTypeSpec.UInt;
+					break;
+				case Token.LONG:
+					type = BuildinTypeSpec.Long;
+					break;
+				case Token.ULONG:
+					type = BuildinTypeSpec.ULong;
+					break;
+				case Token.FLOAT:
+					type = BuildinTypeSpec.Float;
+					break;
+				case Token.DOUBLE:
+					type = BuildinTypeSpec.Double;
+					break;
+				case Token.STRING:
+					type = BuildinTypeSpec.String;
+					break;
+				case Token.OBJECT:
+					type = BuildinTypeSpec.Object;
+					break;
+				default:
+					var r = ctx.scope.ResolveName(token.value);
+					if (r == null)
+					{
+						ctx.complier.OutputError(string.Format("未能找到类型或命名空间\"{0}\"(是否缺少 using 指令或程序集引用?)", token.value));
+						return null;
+					}
+					return r;
 			}
+			return new List<MemberSpec>() { type };
 		}
 	}
 
@@ -41,19 +121,33 @@ namespace LeeLang
 			this.left = left;
 			this.name = name;
 		}
-		public override void ResolveMember(ResolveContext ctx, List<MemberSpec> result, MemberSpec.VerifyMember verify)
+		public override string ToString()
 		{
-			List<MemberSpec> r = new List<MemberSpec>();
-			left.ResolveMember(ctx, r, x => x is NamespaceSpec);
-			if (r.Count == 0)
-			{
-				ctx.complier.OutputError(string.Format("未能找到类型或命名空间名\"{0}\"(是否缺少 using 指令或程序集引用?)", left));
-				return;
-			}
+			return left.ToString() + "." + name.value;
+		}
+		public override List<MemberSpec> ResolveType(ResolveContext ctx)
+		{
+			var r = left.ResolveType(ctx);
+			if (r == null)
+				return null;
+			List<MemberSpec> result = null;
 			for (int i = 0; i < r.Count; i++)
 			{
-				r[i].ResolveMember(name.value, result, verify);
+				if (!(r[i] is NamespaceSpec))
+					continue;
+
+				var t = r[i].ResolveName(name.value);
+				if (t != null)
+				{
+					if (result != null)
+						result.AddRange(t);
+					else
+						result = t;
+				}
 			}
+			if (result == null)
+				ctx.complier.OutputError(string.Format("未能找到类型或命名空间\"{0}\"(是否缺少 using 指令或程序集引用?)", name));
+			return result;
 		}
 	}
 
@@ -66,63 +160,90 @@ namespace LeeLang
 		{
 			this.left = left;
 		}
-
+		public override string ToString()
+		{
+			StringBuilder sb = new StringBuilder();
+			sb.Append(left.ToString());
+			sb.Append('<');
+			for (int i = 0; i < members.Count; i++)
+			{
+				if (i != 0)
+					sb.Append(',');
+				sb.Append(members[i].ToString());
+			}
+			sb.Append('>');
+			return sb.ToString();
+		}
 		public void Add(Expression expr)
 		{
 			members.Add(expr);
 		}
-		public override void ResolveMember(ResolveContext ctx, List<MemberSpec> result, MemberSpec.VerifyMember verify)
+		public override List<MemberSpec> ResolveType(ResolveContext ctx)
 		{
-			List<MemberSpec> gt = new List<MemberSpec>();
-			left.ResolveMember(ctx, gt, x => x is GenericTypeSpec && (x as GenericTypeSpec).Arity == members.Count);
-			if (gt.Count == 0)
-				return;
+			var r = left.ResolveType(ctx);
+			if (r == null)
+				return null;
 
-			bool error = false;
-			List<TypeSpec>[] types = new List<TypeSpec>[members.Count];
-			List<MemberSpec> ts = new List<MemberSpec>();
-			for (int i = 0; i < types.Length; i++)
+			TypeSpec[] args = null;
+			List<MemberSpec> result = null;
+			for (int i = 0; i < r.Count; i++)
 			{
-				ts.Clear();
+				ClassStructSpec g = r[i] as ClassStructSpec;
+				if (g == null || g.Arity != members.Count)
+					continue;
 
-				members[i].ResolveMember(ctx, ts, x => x is TypeSpec);
-				if (ts.Count == 0)
+				if (args == null)
 				{
-					ctx.complier.OutputError(string.Format("未能找到类型\"{0}\"(是否缺少 using 指令或程序集引用?)", members[i]));
+					args = GetTypeArgs(ctx);
+					if (args == null)
+						return null;
+				}
+				var t = g.CreateGenericType(args);
+				if (result != null)
+					result.Add(t);
+				else
+					result = new List<MemberSpec>() { t };
+			}
+			if (args != null)
+				return result;
+
+			ctx.complier.OutputError(string.Format("未能找到类型名\"{0}`{1}\"(是否缺少 using 指令或程序集引用?)", left, members.Count));
+			return null;
+		}
+		private TypeSpec[] GetTypeArgs(ResolveContext ctx)
+		{
+			bool error = false;
+			TypeSpec[] args = new TypeSpec[members.Count];
+			for (int i = 0; i < args.Length; i++)
+			{
+				var r = members[i].ResolveType(ctx);
+				if (r == null)
+				{
 					error = true;
 					continue;
 				}
-
-				List<TypeSpec> vs = new List<TypeSpec>();
-				for (int j = 0; j < ts.Count; j++)
+				for (int j = 0; j < r.Count; j++)
 				{
-					vs.Add(ts[i] as TypeSpec);
+					if (!(r[j] is TypeSpec))
+						continue;
+
+					ctx.CheckAccess(r[j]);
+					if (args[i] != null)
+						ctx.complier.OutputError(string.Format("不确定使用\"{0}\"或是\"{1}\"", args[i], r[j]));
+					else
+						args[i] = r[j] as TypeSpec;
 				}
-				types[i] = vs;
+
+				if (args[i] == null)
+				{
+					ctx.complier.OutputError(string.Format("未能找到类型名\"{0}\"(是否缺少 using 指令或程序集引用?)", members[i]));
+					error = true;
+				}
 			}
 			if (error)
-				return;
+				return null;
 
-			TypeSpec[] args = new TypeSpec[members.Count];
-			EnumCreateType(types, args, 0, gt, result, verify);
-		}
-		private void EnumCreateType(List<TypeSpec>[] types, TypeSpec[] args, int idx, List<MemberSpec> gt, List<MemberSpec> result, MemberSpec.VerifyMember verify)
-		{
-			if (idx >= types.Length)
-			{
-				for (int i = 0; i < gt.Count; i++)
-				{
-					var t = (gt[i] as GenericTypeSpec).CreateType(args);
-					if (verify == null || verify(t))
-						result.Add(t);
-				}
-			}
-			var ts = types[idx];
-			for (int i = 0; i < ts.Count; i++)
-			{
-				args[idx] = ts[i];
-				EnumCreateType(types, args, idx + 1, gt, result, verify);
-			}
+			return args;
 		}
 	}
 
@@ -134,23 +255,25 @@ namespace LeeLang
 		{
 			this.left = left;
 		}
-		public override void ResolveMember(ResolveContext ctx, List<MemberSpec> result, MemberSpec.VerifyMember verify)
+		public override string ToString()
 		{
-			left.ResolveMember(ctx, result, x => x is TypeSpec);
-			if (result.Count == 0)
+			return left.ToString() + "[]";
+		}
+		public override List<MemberSpec> ResolveType(ResolveContext ctx)
+		{
+			var r = left.ResolveType(ctx);
+			if (r == null)
+				return null;
+			List<MemberSpec> result = null;
+			for (int i = 0; i < r.Count; i++)
 			{
-				ctx.complier.OutputError(string.Format("未能找到类型或命名空间名\"{0}\"(是否缺少 using 指令或程序集引用?)", left));
-				return;
-			}
-			for (int i = result.Count - 1; i >= 0; i--)
-			{
-				TypeSpec t = result[i] as TypeSpec;
-				t = t.MakeArray();
-				if (verify == null || verify(t))
-					result[i] = t;
+				var t = (r[i] as TypeSpec).MakeArray();
+				if (result != null)
+					result.Add(t);
 				else
-					result.RemoveAt(i);
+					result = new List<MemberSpec>() { t };
 			}
+			return result;
 		}
 	}
 
@@ -162,23 +285,25 @@ namespace LeeLang
 		{
 			this.left = left;
 		}
-		public override void ResolveMember(ResolveContext ctx, List<MemberSpec> result, MemberSpec.VerifyMember verify)
+		public override string ToString()
 		{
-			left.ResolveMember(ctx, result, x => x is TypeSpec);
-			if (result.Count == 0)
+			return left.ToString() + "*";
+		}
+		public override List<MemberSpec> ResolveType(ResolveContext ctx)
+		{
+			var r = left.ResolveType(ctx);
+			if (r == null)
+				return null;
+			List<MemberSpec> result = null;
+			for (int i = 0; i < r.Count; i++)
 			{
-				ctx.complier.OutputError(string.Format("未能找到类型或命名空间名\"{0}\"(是否缺少 using 指令或程序集引用?)", left));
-				return;
-			}
-			for (int i = result.Count - 1; i >= 0; i--)
-			{
-				TypeSpec t = result[i] as TypeSpec;
-				t = t.MakePointer();
-				if (verify == null || verify(t))
-					result[i] = t;
+				var t = (r[i] as TypeSpec).MakePointer();
+				if (result != null)
+					result.Add(t);
 				else
-					result.RemoveAt(i);
+					result = new List<MemberSpec>() { t };
 			}
+			return result;
 		}
 	}
 
@@ -191,6 +316,10 @@ namespace LeeLang
 		{
 			this.left = left;
 			this.right = right;
+		}
+		public override string ToString()
+		{
+			return left.ToString() + " = " + right.ToString();
 		}
 	}
 
@@ -206,6 +335,10 @@ namespace LeeLang
 			this.v_true = v_true;
 			this.v_false = v_false;
 		}
+		public override string ToString()
+		{
+			return cond.ToString() + " ? " + v_true.ToString() + " : " + v_false.ToString();
+		}
 	}
 	public class TypeCastExpression : Expression
 	{
@@ -217,6 +350,10 @@ namespace LeeLang
 			this.type = type;
 			this.value = value;
 		}
+		public override string ToString()
+		{
+			return "(" + type.ToString() + ")" + value.ToString();
+		}
 	}
 	public class NegExpression : Expression
 	{
@@ -225,6 +362,10 @@ namespace LeeLang
 		public NegExpression(Expression value)
 		{
 			this.value = value;
+		}
+		public override string ToString()
+		{
+			return "-" + value.ToString();
 		}
 	}
 	public class NotExpression : Expression
@@ -235,6 +376,10 @@ namespace LeeLang
 		{
 			this.value = value;
 		}
+		public override string ToString()
+		{
+			return "~" + value.ToString();
+		}
 	}
 	public class LogicNotExpression : Expression
 	{
@@ -244,6 +389,10 @@ namespace LeeLang
 		{
 			this.value = value;
 		}
+		public override string ToString()
+		{
+			return "!" + value.ToString();
+		}
 	}
 	public class ValueListExpression : Expression
 	{
@@ -251,6 +400,17 @@ namespace LeeLang
 
 		public ValueListExpression()
 		{
+		}
+		public override string ToString()
+		{
+			StringBuilder sb = new StringBuilder();
+			for (int i = 0; i < values.Count; i++)
+			{
+				if (i != 0)
+					sb.Append(',');
+				sb.Append(values[i].ToString());
+			}
+			return sb.ToString();
 		}
 		public void Add(Expression val)
 		{
@@ -267,6 +427,10 @@ namespace LeeLang
 			this.value = value;
 			this.args = args;
 		}
+		public override string ToString()
+		{
+			return value.ToString() + "[" + args.ToString() + "]";
+		}
 	}
 	public class InvocationExpression : Expression
 	{
@@ -278,16 +442,9 @@ namespace LeeLang
 			this.value = value;
 			this.args = args;
 		}
-	}
-	public class MemberExpression : Expression
-	{
-		public Expression value;
-		public NameExpression name;
-
-		public MemberExpression(Expression value, NameExpression name)
+		public override string ToString()
 		{
-			this.value = value;
-			this.name = name;
+			return value.ToString() + "(" + args.ToString() + ")";
 		}
 	}
 	public class ConstantExpression : Expression
@@ -308,6 +465,10 @@ namespace LeeLang
 		{
 			this.value = value;
 		}
+		public override string ToString()
+		{
+			return value;
+		}
 		public string Value => value;
 	}
 	public class NameOfExpression : StringConstantExpression
@@ -318,12 +479,20 @@ namespace LeeLang
 		{
 			this.expr = expr;
 		}
+		public override string ToString()
+		{
+			return "nameof(" + expr.ToString() + ")";
+		}
 	}
 	public class NullConstantExpression : ConstantExpression
 	{
 		public NullConstantExpression()
 			: base(BuildinTypeSpec.Object)
 		{
+		}
+		public override string ToString()
+		{
+			return "null";
 		}
 	}
 	public class EnumConstantExpression : ConstantExpression
@@ -334,6 +503,10 @@ namespace LeeLang
 		{
 			this.value = value;
 		}
+		public override string ToString()
+		{
+			return value.ToString();
+		}
 	}
 	public class LiteralExpression : Expression
 	{
@@ -342,6 +515,10 @@ namespace LeeLang
 		public LiteralExpression(TokenValue value)
 		{
 			this.value = value;
+		}
+		public override string ToString()
+		{
+			return value.ToString();
 		}
 	}
 	public class NewExpression : Expression
@@ -358,6 +535,23 @@ namespace LeeLang
 			this.value = value;
 			this.is_array = is_array;
 		}
+		public override string ToString()
+		{
+			StringBuilder sb = new StringBuilder();
+			sb.Append("new ");
+			sb.Append(type.ToString());
+			sb.Append(is_array ? '[' : '(');
+			if (args != null)
+				sb.Append(args.ToString());
+			sb.Append(is_array ? ']' : ')');
+			if (value != null)
+			{
+				sb.Append('{');
+				sb.Append(value.ToString());
+				sb.Append('}');
+			}
+			return sb.ToString();
+		}
 	}
 	public class TypeofExpression : Expression
 	{
@@ -367,11 +561,19 @@ namespace LeeLang
 		{
 			this.type = type;
 		}
+		public override string ToString()
+		{
+			return "typeof(" + type.ToString() + ")";
+		}
 	}
 	public class DefaultExpression : Expression
 	{
 		public DefaultExpression()
 		{
+		}
+		public override string ToString()
+		{
+			return "default";
 		}
 	}
 
@@ -429,6 +631,49 @@ namespace LeeLang
 			this.left = left;
 			this.right = right;
 		}
+		public override string ToString()
+		{
+			switch (oper)
+			{
+				case Operator.Multiply:
+					return left.ToString() + " * " + right.ToString();
+				case Operator.Division:
+					return left.ToString() + " / " + right.ToString();
+				case Operator.Modulus:
+					return left.ToString() + " % " + right.ToString();
+				case Operator.Addition:
+					return left.ToString() + " + " + right.ToString();
+				case Operator.Subtraction:
+					return left.ToString() + " - " + right.ToString();
+				case Operator.LeftShift:
+					return left.ToString() + " << " + right.ToString();
+				case Operator.RightShift:
+					return left.ToString() + " >> " + right.ToString();
+				case Operator.LessThan:
+					return left.ToString() + " < " + right.ToString();
+				case Operator.GreaterThan:
+					return left.ToString() + " > " + right.ToString();
+				case Operator.LessThanOrEqual:
+					return left.ToString() + " <= " + right.ToString();
+				case Operator.GreaterThanOrEqual:
+					return left.ToString() + " >= " + right.ToString();
+				case Operator.Equality:
+					return left.ToString() + " == " + right.ToString();
+				case Operator.Inequality:
+					return left.ToString() + " != " + right.ToString();
+				case Operator.BitwiseAnd:
+					return left.ToString() + " & " + right.ToString();
+				case Operator.ExclusiveOr:
+					return left.ToString() + " ^ " + right.ToString();
+				case Operator.BitwiseOr:
+					return left.ToString() + " | " + right.ToString();
+				case Operator.LogicalAnd:
+					return left.ToString() + " && " + right.ToString();
+				case Operator.LogicalOr:
+					return left.ToString() + " || " + right.ToString();
+			}
+			return "<<error>>";
+		}
 	}
 
 	public class CompoundAssign : Expression
@@ -441,6 +686,33 @@ namespace LeeLang
 			this.oper = oper;
 			this.left = left;
 			this.right = right;
+		}
+		public override string ToString()
+		{
+			switch (oper)
+			{
+				case BinaryExpression.Operator.Multiply:
+					return left.ToString() + " *= " + right.ToString();
+				case BinaryExpression.Operator.Division:
+					return left.ToString() + " /= " + right.ToString();
+				case BinaryExpression.Operator.Modulus:
+					return left.ToString() + " %= " + right.ToString();
+				case BinaryExpression.Operator.Addition:
+					return left.ToString() + " += " + right.ToString();
+				case BinaryExpression.Operator.Subtraction:
+					return left.ToString() + " -= " + right.ToString();
+				case BinaryExpression.Operator.LeftShift:
+					return left.ToString() + " <<= " + right.ToString();
+				case BinaryExpression.Operator.RightShift:
+					return left.ToString() + " >>= " + right.ToString();
+				case BinaryExpression.Operator.BitwiseAnd:
+					return left.ToString() + " &= " + right.ToString();
+				case BinaryExpression.Operator.ExclusiveOr:
+					return left.ToString() + " ^= " + right.ToString();
+				case BinaryExpression.Operator.BitwiseOr:
+					return left.ToString() + " |= " + right.ToString();
+			}
+			return "<<error>>";
 		}
 	}
 
@@ -467,6 +739,21 @@ namespace LeeLang
 			this.mode = mode;
 			this.expr = expr;
 		}
+		public override string ToString()
+		{
+			switch (mode)
+			{
+				case Mode.PreIncrement:
+					return "++" + expr.ToString();
+				case Mode.PreDecrement:
+					return "--" + expr.ToString();
+				case Mode.PostIncrement:
+					return expr.ToString() + "++";
+				case Mode.PostDecrement:
+					return expr.ToString() + "--";
+			}
+			return "<<error>>";
+		}
 	}
 	public class StringConcat : Expression
 	{
@@ -475,6 +762,17 @@ namespace LeeLang
 		public StringConcat(ValueListExpression args)
 		{
 			this.args = args;
+		}
+		public override string ToString()
+		{
+			StringBuilder sb = new StringBuilder();
+			for (int i = 0; i < args.values.Count; i++)
+			{
+				if (i != 0)
+					sb.Append('+');
+				sb.Append(args.values[i].ToString());
+			}
+			return sb.ToString();
 		}
 	}
 }

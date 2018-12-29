@@ -48,7 +48,6 @@
     <Compile Include="Error.cs" />
     <Compile Include="FieldSpec.cs" />
     <Compile Include="FileSpec.cs" />
-    <Compile Include="Grammar.cs" />
     <Compile Include="Location.cs" />
     <Compile Include="Expression.cs" />
     <Compile Include="MemberSpec.cs" />

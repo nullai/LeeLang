@@ -8,10 +8,11 @@ namespace LeeLang
 {
 	public class MethodSpec : MemberSpec
 	{
-		public MethodSpec(string name, NamespaceSpec declare)
+		public TypeSpec return_type;
+		public MethodSpec(string name, TypeSpec type, NamespaceSpec declare)
 			: base(name, declare)
 		{
-
+			return_type = type;
 		}
 	}
 }

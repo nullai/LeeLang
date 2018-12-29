@@ -25,7 +25,7 @@ namespace LeeLang
 				Console.WriteLine(ex.Message);
 			}
 		}
-
+		static List<object> printed = new List<object>();
 		static void PrintLine(string val, int tab)
 		{
 			Console.WriteLine(new string(' ', tab) + val);
@@ -38,7 +38,7 @@ namespace LeeLang
 				return;
 			}
 			var t = v.GetType();
-			if (v is string || v is int || t.IsEnum)
+			if (v is string || v is int || t.IsEnum || v is bool)
 			{
 				PrintLine(name + " : " + v, tab);
 				return;
@@ -53,12 +53,38 @@ namespace LeeLang
 			}
 			if (t.Name == "List`1")
 			{
-				var count = (int)t.GetMethod("get_Count").Invoke(v, null);
-				PrintLine(name + " : List(" + count + ")", tab);
-				var m = t.GetMethod("get_Item");
+				System.Collections.IList dict = v as System.Collections.IList;
+				var count = dict.Count;
+				PrintLine(name + " : List[" + count + "]", tab);
+
+				int i = 0;
+				foreach (object p in dict)
+				{
+					PrintValue("[" + i + "]", p, tab + 1);
+					++i;
+				}
+
+				return;
+			}
+			if (t.IsArray)
+			{
+				Array a = v as Array;
+				var count = a.Length;
+				PrintLine(name + " : Array[" + count + "]", tab);
 				for (int i = 0; i < count; i++)
 				{
-					PrintValue("[" + i + "]", m.Invoke(v, new object[] { i }), tab + 1);
+					PrintValue("[" + i + "]", a.GetValue(i), tab + 1);
+				}
+				return;
+			}
+			if (t.Name == "Dictionary`2")
+			{
+				System.Collections.IDictionary dict = v as System.Collections.IDictionary;
+				var count = dict.Count;
+				PrintLine(name + " : Dictionary[" + count + "]", tab);
+				foreach (System.Collections.DictionaryEntry p in dict)
+				{
+					PrintValue("[" + p.Key + "]", p.Value, tab + 1);
 				}
 				return;
 			}
@@ -73,10 +99,21 @@ namespace LeeLang
 				return;
 			}
 			Type t = s.GetType();
+			if (t.IsClass)
+			{
+				if (printed.Contains(s))
+				{
+					PrintLine("{...}", tab);
+					return;
+				}
+				printed.Add(s);
+			}
 			var fields = t.GetFields();
 			for (int i = 0; i < fields.Length; i++)
 			{
 				var f = fields[i];
+				if (f.IsStatic)
+					continue;
 				var v = f.GetValue(s);
 				PrintValue(f.Name, v, tab);
 			}

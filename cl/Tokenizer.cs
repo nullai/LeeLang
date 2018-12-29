@@ -162,6 +162,8 @@ namespace LeeLang
 
 		public override string ToString()
 		{
+			if (token == Token.IDENTIFIER)
+				return value;
 			return GetName(token);
 		}
 

@@ -8,13 +8,17 @@ namespace LeeLang
 {
 	public class TypeSpec : NamespaceSpec
 	{
+		public TypeSpec base_type = null;
+		public List<TypeSpec> interface_types = null;
 		protected TypeSpec ArrayType;
 		protected TypeSpec PointerType;
 		public virtual bool IsArray => false;
 		public virtual bool IsPointer => false;
 		public virtual bool IsGeneric => false;
-		public virtual int Arity => 0;
-		public virtual List<TypeSpec> BaseTypes => null;
+		public virtual bool IsStruct => false;
+		public virtual bool IsClass => false;
+		public virtual bool IsInterface => false;
+		public virtual bool IsEnum => false;
 		public virtual TypeSpec ElementType => null;
 
 		public TypeSpec(string name, NamespaceSpec declare)
@@ -46,51 +50,140 @@ namespace LeeLang
 			}
 			return true;
 		}
-		public override List<MemberSpec> GetMembers(string name)
+		public override List<MemberSpec> ResolveName(string name)
 		{
+			if (resolving)
+				return null;
+			resolving = true;
 			List<MemberSpec> r;
-			if(members.TryGetValue(name, out r))
-				return r;
-
-			var bs = BaseTypes;
-			if (bs != null)
+			if (members.TryGetValue(name, out r))
 			{
-				for (int i = 0; i < bs.Count; i++)
+				for (int i = 0; i < r.Count; i++)
 				{
-					var t = bs[i].GetMembers(name);
-					if (t != null)
+					var item = r[i];
+					if (item.name == name && item.prefix == null)
 					{
-						if (r == null)
-							r = t;
-						else
-							r.AddRange(t);
+						resolving = false;
+						r.Clear();
+						r.Add(item);
+						return r;
 					}
 				}
 			}
+			if (usings != null)
+			{
+				for (int i = 0; i < usings.Count; i++)
+				{
+					var t = usings[i].ResolveName(name);
+					if (t != null)
+					{
+						if (r != null)
+							r.AddRange(t);
+						else
+							r = t;
+					}
+				}
+			}
+
+			if (r == null && base_type != null)
+				r = base_type.ResolveName(name);
+
+			if (r == null && Declaring != null)
+				r = Declaring.ResolveName(name);
+
+			resolving = false;
 			return r;
+		}
+		public bool AddInterface(TypeSpec ins)
+		{
+			if (interface_types == null)
+			{
+				interface_types = new List<TypeSpec>() { ins };
+				return true;
+			}
+
+			if (interface_types.Contains(ins))
+				return false;
+
+			interface_types.Add(ins);
+			return true;
 		}
 	}
 
 	public class ClassStructSpec : TypeSpec
 	{
-		public List<TypeSpec> base_types = new List<TypeSpec>();
-		public ClassStructSpec(string name, NamespaceSpec declare)
+		public GenericParamterSpec[] generic_paramters;
+		public Dictionary<TypeSpec[], TypeSpec> InsTypes;
+		public bool is_interface = false;
+		public bool is_struct = false;
+		public override bool IsClass => !is_struct && !is_interface;
+		public override bool IsStruct => is_struct;
+		public override bool IsInterface => is_interface;
+		public override bool IsGeneric => generic_paramters != null;
+		public override int Arity => generic_paramters != null ? generic_paramters.Length : 0;
+		public ClassStructSpec(CommonAttribute attr, string name, NamespaceSpec declare, bool ins, bool str)
 			: base(name, declare)
 		{
+			this.attr = attr;
+			is_interface = ins;
+			is_struct = str;
 		}
+		public void SetArity(int arity)
+		{
+			fullname += "`" + arity;
+			generic_paramters = new GenericParamterSpec[arity];
+		}
+		public TypeSpec CreateGenericType(TypeSpec[] args)
+		{
+			if (InsTypes == null)
+				InsTypes = new Dictionary<TypeSpec[], TypeSpec>();
+			else
+			{
+				foreach (var p in InsTypes)
+				{
+					if (CompareTypes(p.Key, args))
+					{
+						return p.Value;
+					}
+				}
+			}
 
-		public override List<TypeSpec> BaseTypes => base_types;
+			StringBuilder sb = new StringBuilder();
+			sb.Append(name);
+			sb.Append('<');
+			for (int i = 0; i < args.Length; i++)
+			{
+				if (i != 0)
+					sb.Append(',');
+				sb.Append(args[i].name);
+			}
+			sb.Append('>');
+			var v = new TypeSpec(sb.ToString(), Declaring);
+			InsTypes.Add(args, v);
+			return v;
+		}
+	}
+
+	public class GenericParamterSpec : TypeSpec
+	{
+		public ClassStructSpec declaring_type;
+		public override bool IsGeneric => true;
+
+		public GenericParamterSpec(ClassStructSpec dt, string name)
+			: base(name, dt)
+		{
+			declaring_type = dt;
+		}
 	}
 
 	public class EnumSpec : TypeSpec
 	{
-		public List<TypeSpec> base_types = new List<TypeSpec>();
-		public EnumSpec(string name, NamespaceSpec declare)
+		public override bool IsEnum => true;
+		public EnumSpec(CommonAttribute attr, string name, NamespaceSpec declare)
 			: base(name, declare)
 		{
+			this.attr = attr;
 		}
-
-		public override List<TypeSpec> BaseTypes => base_types;
 	}
 
 	public class BuildinTypeSpec : TypeSpec
@@ -137,6 +230,8 @@ namespace LeeLang
 		{
 			this.type = type;
 		}
+		public override bool IsStruct => type < BuildinType.String;
+		public override bool IsClass => type >= BuildinType.String;
 	}
 
 	public class PointerSpec : TypeSpec
@@ -161,63 +256,6 @@ namespace LeeLang
 			: base(et.name + "[]", et.Declaring)
 		{
 			element_type = et;
-		}
-	}
-
-	public class GenericTypeSpec : TypeSpec
-	{
-		public GenericParamterSpec[] paramters;
-		public Dictionary<TypeSpec[], TypeSpec> InsTypes;
-		public override bool IsGeneric => true;
-		public override int Arity => paramters.Length;
-
-		public GenericTypeSpec(string name, int arity, NamespaceSpec declare)
-			: base(name, declare)
-		{
-			fullname += "`" + arity;
-			paramters = new GenericParamterSpec[arity];
-		}
-
-		public TypeSpec CreateType(TypeSpec[] args)
-		{
-			if (InsTypes == null)
-				InsTypes = new Dictionary<TypeSpec[], TypeSpec>();
-			else
-			{
-				foreach(var p in InsTypes)
-				{
-					if (CompareTypes(p.Key, args))
-					{
-						return p.Value;
-					}
-				}
-			}
-
-			StringBuilder sb = new StringBuilder();
-			sb.Append(name);
-			sb.Append('<');
-			for (int i = 0; i < args.Length; i++)
-			{
-				if (i != 0)
-					sb.Append(',');
-				sb.Append(args[i].name);
-			}
-			sb.Append('>');
-			var v = new TypeSpec(sb.ToString(), Declaring);
-			InsTypes.Add(args, v);
-			return v;
-		}
-	}
-
-	public class GenericParamterSpec : TypeSpec
-	{
-		public GenericTypeSpec declaring_type;
-		public override bool IsGeneric => true;
-
-		public GenericParamterSpec(GenericTypeSpec dt, string name)
-			: base(name, dt)
-		{
-			declaring_type = dt;
 		}
 	}
 }
