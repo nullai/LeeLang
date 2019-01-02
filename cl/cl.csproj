@@ -44,8 +44,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblySpec.cs" />
+    <Compile Include="BlockSpec.cs" />
     <Compile Include="Compiler.cs" />
     <Compile Include="Error.cs" />
+    <Compile Include="ExpressionSpec.cs" />
     <Compile Include="FieldSpec.cs" />
     <Compile Include="FileSpec.cs" />
     <Compile Include="Location.cs" />

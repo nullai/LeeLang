@@ -220,6 +220,7 @@ namespace LeeLang
 				++mIndex;
 				if (!Expect(Token.OPEN_BRACKET))
 					return null;
+				name.value = "Item";
 				PropertyStatement prop = new PropertyStatement(attr, type, null, new NameExpression(name));
 				prop.parameters = ParseParameters(Token.CLOSE_BRACKET);
 				if (Expect(Token.CLOSE_BRACKET) || mTokens[mIndex].token == Token.OPEN_BRACE)
@@ -318,7 +319,7 @@ namespace LeeLang
 				if (mTokens[mIndex].token == Token.IDENTIFIER)
 					name = mTokens[mIndex++];
 
-				ParameterStatement p = new ParameterStatement(attr, type, name == null ? null : new NameExpression(name));
+				ParameterStatement p = new ParameterStatement(attr, type, name == null ? null : name.value);
 				ps.Add(p);
 				if (mTokens[mIndex].token != Token.COMMA)
 					break;
@@ -1220,36 +1221,36 @@ namespace LeeLang
 			}
 		}
 
-		private ParamAttribute ParseParamAttribute(bool have_this)
+		private ParameterAttribute ParseParamAttribute(bool have_this)
 		{
-			ParamAttribute attr = ParamAttribute.NONE;
+			ParameterAttribute attr = ParameterAttribute.NONE;
 			while (true)
 			{
-				ParamAttribute add = ParamAttribute.NONE;
+				ParameterAttribute add = ParameterAttribute.NONE;
 				switch (mTokens[mIndex].token)
 				{
 					case Token.IN:
-						add = ParamAttribute.IN;
+						add = ParameterAttribute.IN;
 						break;
 					case Token.OUT:
-						add = ParamAttribute.OUT;
+						add = ParameterAttribute.OUT;
 						break;
 					case Token.REF:
-						add = ParamAttribute.REF;
+						add = ParameterAttribute.REF;
 						break;
 					case Token.PARAMS:
-						add = ParamAttribute.PARAMS;
+						add = ParameterAttribute.PARAMS;
 						break;
 					case Token.THIS:
 						if (!have_this)
 							return attr;
-						add = ParamAttribute.THIS;
+						add = ParameterAttribute.THIS;
 						break;
 					default:
 						return attr;
 				}
 
-				if ((attr & add) != ParamAttribute.NONE)
+				if ((attr & add) != ParameterAttribute.NONE)
 					Error(mTokens[mIndex].loc, "重复声明属性 " + mTokens[mIndex].ToString());
 				++mIndex;
 				attr |= add;

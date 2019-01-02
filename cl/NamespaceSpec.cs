@@ -11,7 +11,6 @@ namespace LeeLang
 		public string fullname;
 		public Dictionary<string, List<MemberSpec>> members = new Dictionary<string, List<MemberSpec>>();
 		public List<NamespaceSpec> usings = null;
-		protected bool resolving = false;
 
 		public NamespaceSpec(string name, NamespaceSpec declare)
 			: base(name, declare)
@@ -106,6 +105,19 @@ namespace LeeLang
 
 			return new NamespaceSpec((expr as NameExpression).token.value, declare);
 		}
+		public override void Resolve(ResolveContext ctx)
+		{
+			var scope = ctx.scope;
+			ctx.scope = this;
+
+			foreach(var ps in members.Values)
+			{
+				for (int i = 0; i < ps.Count; i++)
+					ps[i].DoResolve(ctx);
+			}
+
+			ctx.scope = scope;
+		}
 	}
 
 	public class UsingSpec : MemberSpec
@@ -115,14 +127,6 @@ namespace LeeLang
 			: base(name, declare)
 		{
 			this.value = value;
-		}
-	}
-
-	public class BlockSpec : NamespaceSpec
-	{
-		public BlockSpec(NamespaceSpec declare)
-			: base(null, declare)
-		{
 		}
 	}
 }

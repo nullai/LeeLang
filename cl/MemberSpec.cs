@@ -8,13 +8,13 @@ namespace LeeLang
 {
 	public class MemberSpec
 	{
+		public bool resolving = false;
 		public CommonAttribute attr;
 		public string prefix;
 		public string name;
 		public NamespaceSpec Declaring;
 		public virtual int Arity => 0;
 
-		public delegate bool VerifyMember(MemberSpec member);
 
 		public MemberSpec(string name, NamespaceSpec declare)
 		{
@@ -25,6 +25,22 @@ namespace LeeLang
 		public virtual List<MemberSpec> ResolveName(string name)
 		{
 			throw new Exception("ResolveName In " + GetType().Name);
+		}
+
+		public virtual void Resolve(ResolveContext ctx)
+		{
+		}
+		public void DoResolve(ResolveContext ctx)
+		{
+			if (resolving)
+			{
+				ctx.complier.OutputError("存在循环引用！");
+				return;
+			}
+
+			resolving = true;
+			Resolve(ctx);
+			resolving = false;
 		}
 	}
 }

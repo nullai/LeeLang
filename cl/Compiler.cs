@@ -49,6 +49,9 @@ namespace LeeLang
 			if (!DoResolveUsing())
 				return false;
 
+			if (!DoResolveMember())
+				return false;
+
 			if (!DoResolve())
 				return false;
 
@@ -95,14 +98,20 @@ namespace LeeLang
 			}
 			return error_count == 0;
 		}
-		private bool DoResolve()
+		private bool DoResolveMember()
 		{
 			ResolveContext ctx = new ResolveContext(this);
 			ctx.scope = Assembly.CurrentModule;
 			for (int i = 0; i < file_statement.Count; i++)
 			{
-				file_statement[i].Resolve(ctx);
+				file_statement[i].ResolveMember(ctx);
 			}
+			return error_count == 0;
+		}
+		private bool DoResolve()
+		{
+			ResolveContext ctx = new ResolveContext(this);
+			Assembly.CurrentModule.DoResolve(ctx);
 			return error_count == 0;
 		}
 	}

@@ -28,7 +28,7 @@ namespace LeeLang
 	}
 
 	[Flags]
-	public enum ParamAttribute
+	public enum ParameterAttribute
 	{
 		NONE = 0,
 		IN = 1,
@@ -45,7 +45,7 @@ namespace LeeLang
 		public virtual void ResolveUsing(ResolveContext ctx)
 		{
 		}
-		public virtual void Resolve(ResolveContext ctx)
+		public virtual void ResolveMember(ResolveContext ctx)
 		{
 		}
 	}
@@ -62,20 +62,6 @@ namespace LeeLang
 	{
 		public List<Statement> values = new List<Statement>();
 		public BlockSpec block_spec;
-
-		public override void Resolve(ResolveContext ctx)
-		{
-			var scope = ctx.scope;
-			block_spec = new BlockSpec(ctx.scope);
-
-			ctx.scope = block_spec;
-
-			for (int i = 0; i < values.Count; i++)
-			{
-				values[i].Resolve(ctx);
-			}
-			ctx.scope = scope;
-		}
 	}
 
 	public class FileStatement : Statement
@@ -110,14 +96,14 @@ namespace LeeLang
 			}
 			ctx.scope = scope;
 		}
-		public override void Resolve(ResolveContext ctx)
+		public override void ResolveMember(ResolveContext ctx)
 		{
 			var scope = ctx.scope;
 			ctx.scope = file_spec;
 
 			for (int i = 0; i < members.Count; i++)
 			{
-				members[i].Resolve(ctx);
+				members[i].ResolveMember(ctx);
 			}
 			ctx.scope = scope;
 		}
@@ -197,14 +183,14 @@ namespace LeeLang
 			}
 			ctx.scope = scope;
 		}
-		public override void Resolve(ResolveContext ctx)
+		public override void ResolveMember(ResolveContext ctx)
 		{
 			var scope = ctx.scope;
 			ctx.scope = ns_spec;
 
 			for (int i = 0; i < members.Count; i++)
 			{
-				members[i].Resolve(ctx);
+				members[i].ResolveMember(ctx);
 			}
 			ctx.scope = scope;
 		}
@@ -279,7 +265,7 @@ namespace LeeLang
 			}
 			ctx.scope = scope;
 		}
-		public override void Resolve(ResolveContext ctx)
+		public override void ResolveMember(ResolveContext ctx)
 		{
 			bool error = false;
 			if (base_type != null)
@@ -349,7 +335,7 @@ namespace LeeLang
 
 			for (int i = 0; i < members.Count; i++)
 			{
-				members[i].Resolve(ctx);
+				members[i].ResolveMember(ctx);
 			}
 			ctx.scope = scope;
 		}
@@ -371,7 +357,7 @@ namespace LeeLang
 			this.type = type;
 			this.name = name;
 		}
-		public override void Resolve(ResolveContext ctx)
+		public override void ResolveMember(ResolveContext ctx)
 		{
 			var scope = ctx.scope;
 			field_type = type.ResolveToType(ctx);
@@ -384,7 +370,7 @@ namespace LeeLang
 			scope.AddMember(field_spec, ctx.complier);
 
 			if (next != null)
-				next.Resolve(ctx);
+				next.ResolveMember(ctx);
 		}
 	}
 
@@ -399,7 +385,7 @@ namespace LeeLang
 			this.name = name;
 			this.value = value;
 		}
-		public override void Resolve(ResolveContext ctx)
+		public override void ResolveMember(ResolveContext ctx)
 		{
 			var scope = ctx.scope;
 			field_spec = new FieldSpec(name.token.value, scope as TypeSpec, scope);
@@ -428,27 +414,64 @@ namespace LeeLang
 			this.inter = inter;
 			this.name = name;
 		}
-		public override void Resolve(ResolveContext ctx)
+		public override void ResolveMember(ResolveContext ctx)
 		{
 			var scope = ctx.scope;
 			property_type = type.ResolveToType(ctx);
 			if (property_type == null)
 				return;
 
+			if (value.Count == 0)
+			{
+				ctx.complier.OutputError(string.Format("没有为属性\"{0}\"定义方法。", this));
+				return;
+			}
+
 			property_spec = new PropertySpec(name.token.value, property_type, scope);
 			property_spec.attr = attr;
 			scope.AddMember(property_spec, ctx.complier);
+
+			ParameterStatement pval = null;
+			for (int i = 0; i < value.Count; i++)
+			{
+				var v = value[i];
+				switch (v.name.token.value)
+				{
+					case "get":
+						v.name.token.value = "get_" + name.token.value;
+						v.parameters = parameters;
+						v.type = type;
+						break;
+					case "set":
+					case "add":
+					case "remove":
+						v.name.token.value += "_" + name.token.value;
+						v.parameters = new List<ParameterStatement>();
+						if (pval == null)
+							pval = new ParameterStatement(ParameterAttribute.NONE, type, "value");
+						if (parameters != null)
+							v.parameters.AddRange(parameters);
+						v.parameters.Add(pval);
+						v.type = NameExpression.Void;
+						break;
+					default:
+						ctx.complier.OutputError(string.Format("无效的属性方法名\"{0}\"。", v));
+						continue;
+				}
+
+				v.ResolveMember(ctx);
+			}
 		}
 	}
 
 	public class ParameterStatement : Statement
 	{
-		public ParamAttribute attr;
+		public ParameterAttribute attr;
 		public Expression type;
-		public NameExpression name;
-		public Statement value;
+		public string name;
+		public Expression value;
 
-		public ParameterStatement(ParamAttribute attr, Expression type, NameExpression name)
+		public ParameterStatement(ParameterAttribute attr, Expression type, string name)
 		{
 			this.attr = attr;
 			this.type = type;
@@ -474,12 +497,49 @@ namespace LeeLang
 			this.inter = inter;
 			this.name = name;
 		}
-		public override void Resolve(ResolveContext ctx)
+		public override void ResolveMember(ResolveContext ctx)
 		{
 			var scope = ctx.scope;
 			return_type = type.ResolveToType(ctx);
 			if (return_type == null)
 				return;
+
+			method_spec = new MethodSpec(name.token.value, return_type, scope);
+			int ps_count = 0;
+			bool have_this = false;
+			if ((attr & CommonAttribute.STATIC) != CommonAttribute.STATIC && scope is TypeSpec)
+			{
+				have_this = true;
+				ps_count = 1;
+			}
+			if (parameters != null)
+				ps_count += parameters.Count;
+			if (ps_count > 0)
+				method_spec.parameters = new ParameterSpec[ps_count];
+
+			int idx = 0;
+			if (have_this)
+			{
+				ParameterSpec pthis = new ParameterSpec();
+				pthis.type = scope as TypeSpec;
+				pthis.name = "this";
+				method_spec.parameters[0] = pthis;
+				idx = 1;
+			}
+
+			if (parameters != null)
+			{
+				for (int i = 0; i < parameters.Count; i++)
+				{
+					ParameterSpec p = new ParameterSpec();
+					p.attr = parameters[i].attr;
+					p.type = parameters[i].type.ResolveToType(ctx);
+					p.name = parameters[i].name;
+					method_spec.parameters[i + idx] = p;
+				}
+			}
+			method_spec.body = body;
+			scope.AddMember(method_spec, ctx.complier);
 		}
 	}
 

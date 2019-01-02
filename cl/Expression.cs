@@ -33,10 +33,16 @@ namespace LeeLang
 				ctx.complier.OutputError(string.Format("未能找到类型或命名空间\"{0}\"(是否缺少 using 指令或程序集引用?)", this));
 			return result;
 		}
+		public virtual ExpressionSpec Resolve(ResolveContext ctx, TypeSpec type)
+		{
+			throw new Exception("Resolve In " + GetType().Name);
+		}
 	}
 	public class NameExpression : Expression
 	{
 		public TokenValue token;
+
+		public static NameExpression Void = new NameExpression(new TokenValue("void", Location.Null));
 
 		public NameExpression(TokenValue token)
 		{
