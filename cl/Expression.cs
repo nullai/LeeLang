@@ -33,9 +33,9 @@ namespace LeeLang
 				ctx.complier.OutputError(string.Format("未能找到类型或命名空间\"{0}\"(是否缺少 using 指令或程序集引用?)", this));
 			return result;
 		}
-		public virtual ExpressionSpec Resolve(ResolveContext ctx, TypeSpec type)
+		public virtual IR_Value CodeGen(CodeGenContext ctx)
 		{
-			throw new Exception("Resolve In " + GetType().Name);
+			throw new Exception("CodeGen In " + GetType().Name);
 		}
 	}
 	public class NameExpression : Expression
@@ -114,6 +114,31 @@ namespace LeeLang
 					return r;
 			}
 			return new List<MemberSpec>() { type };
+		}
+
+		public override IR_Value CodeGen(CodeGenContext ctx)
+		{
+			var r = ctx.scope.ResolveName(token.value);
+
+			FieldSpec v = null;
+			for (int j = 0; j < r.Count; j++)
+			{
+				if (!(r[j] is FieldSpec))
+					continue;
+
+				if (v != null)
+					ctx.complier.OutputError(string.Format("不确定使用\"{0}\"或是\"{1}\"", v, r[j]));
+				else
+					v = r[j] as FieldSpec;
+			}
+
+			if (v == null)
+			{
+				ctx.complier.OutputError(string.Format("未定义的变量\"{0}\"。)", token));
+				return null;
+			}
+
+			return v.GetIRValue();
 		}
 	}
 

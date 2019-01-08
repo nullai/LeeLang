@@ -48,6 +48,9 @@ namespace LeeLang
 		public virtual void ResolveMember(ResolveContext ctx)
 		{
 		}
+		public virtual void CodeGen(CodeGenContext ctx)
+		{
+		}
 	}
 
 	public class EmptyStatement : Statement
@@ -62,6 +65,14 @@ namespace LeeLang
 	{
 		public List<Statement> values = new List<Statement>();
 		public BlockSpec block_spec;
+
+		public override void CodeGen(CodeGenContext ctx)
+		{
+			for (int i = 0; i < values.Count; i++)
+			{
+				values[i].CodeGen(ctx);
+			}
+		}
 	}
 
 	public class FileStatement : Statement
@@ -372,6 +383,10 @@ namespace LeeLang
 			if (next != null)
 				next.ResolveMember(ctx);
 		}
+		public override void CodeGen(CodeGenContext ctx)
+		{
+			ctx.block.Add((IR_Instruction)field_spec.GetIRValue());
+		}
 	}
 
 	public class EnumFieldStatement : Statement
@@ -553,6 +568,32 @@ namespace LeeLang
 		{
 			this.cond = cond;
 		}
+		public override void CodeGen(CodeGenContext ctx)
+		{
+			var v = cond.CodeGen(ctx);
+
+			IR_BaseBlock t = new IR_BaseBlock(ctx.method);
+			IR_BaseBlock f = new IR_BaseBlock(ctx.method);
+
+			ctx.block.LinkTo(t);
+			ctx.block.LinkTo(f);
+
+			ctx.block.Add(IR_Value.CreateBr(v, t, f));
+
+			ctx.block = t;
+			bodyt.CodeGen(ctx);
+
+			if (bodyf != null)
+			{
+				ctx.block = f;
+				bodyf.CodeGen(ctx);
+
+				t = new IR_BaseBlock(ctx.method);
+				f.Add(IR_Value.CreateBr(null, t, null));
+				f.LinkTo(t);
+			}
+			ctx.block = t;
+		}
 	}
 
 	public class ForStatement : Statement
@@ -568,6 +609,44 @@ namespace LeeLang
 			this.cond = cond;
 			this.iter = iter;
 		}
+
+		public override void CodeGen(CodeGenContext ctx)
+		{
+			if (init != null)
+				init.CodeGen(ctx);
+
+			IR_BaseBlock b = new IR_BaseBlock(ctx.method);
+			IR_BaseBlock e = new IR_BaseBlock(ctx.method);
+			if (cond != null)
+			{
+				var v = cond.CodeGen(ctx);
+				ctx.block.Add(IR_Value.CreateBr(v, b, e));
+				ctx.block.LinkTo(e);
+			}
+			else
+			{
+				ctx.block.Add(IR_Value.CreateBr(null, b, null));
+			}
+			ctx.block = b;
+			ctx.block.LinkTo(b);
+
+			body.CodeGen(ctx);
+
+			if (cond != null)
+			{
+				var v = cond.CodeGen(ctx);
+				ctx.block.Add(IR_Value.CreateBr(v, b, e));
+				ctx.block.LinkTo(b);
+				ctx.block.LinkTo(e);
+			}
+			else
+			{
+				ctx.block.Add(IR_Value.CreateBr(null, b, null));
+				ctx.block.LinkTo(b);
+			}
+
+			ctx.block = e;
+		}
 	}
 
 	public class ForeachStatement : Statement
@@ -581,6 +660,10 @@ namespace LeeLang
 			this.iter = iter;
 			this.value = value;
 		}
+		public override void CodeGen(CodeGenContext ctx)
+		{
+			throw new Exception("不支持");
+		}
 	}
 
 	public class WhileStatement : Statement
@@ -591,6 +674,10 @@ namespace LeeLang
 		public WhileStatement(Expression cond)
 		{
 			this.cond = cond;
+		}
+		public override void CodeGen(CodeGenContext ctx)
+		{
+			throw new Exception("不支持");
 		}
 	}
 
@@ -621,6 +708,10 @@ namespace LeeLang
 		public ReturnStatement(Expression value)
 		{
 			this.value = value;
+		}
+		public override void CodeGen(CodeGenContext ctx)
+		{
+			ctx.block.Add(IR_Value.CreateReturn(null));
 		}
 	}
 

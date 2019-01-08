@@ -20,6 +20,8 @@ namespace LeeLang
 		public virtual bool IsInterface => false;
 		public virtual bool IsEnum => false;
 		public virtual TypeSpec ElementType => null;
+		public virtual IR_DataType IRType => IR_DataType.Void;
+		public virtual int SizeOf => 0;
 
 		public TypeSpec(string name, NamespaceSpec declare)
 			: base(name, declare)
@@ -121,6 +123,36 @@ namespace LeeLang
 		public override bool IsInterface => is_interface;
 		public override bool IsGeneric => generic_paramters != null;
 		public override int Arity => generic_paramters != null ? generic_paramters.Length : 0;
+		public override IR_DataType IRType => IR_DataType.Pointer;
+		public override int SizeOf
+		{
+			get
+			{
+				if (is_interface)
+					return BuildinTypeSpec.PointerSize * 2;
+				if (!is_struct)
+					return BuildinTypeSpec.PointerSize;
+
+				if (resolving)
+					throw new Exception("循环依赖");
+
+				resolving = true;
+
+				int size = 0;
+				foreach (var m in members.Values)
+				{
+					for (int i = 0; i < m.Count; i++)
+					{
+						var p = m[i] as FieldSpec;
+						if (p != null && !p.IsStatic)
+							size += p.field_type.SizeOf;
+					}
+				}
+
+				resolving = false;
+				return size;
+			}
+		}
 		public ClassStructSpec(CommonAttribute attr, string name, NamespaceSpec declare, bool ins, bool str)
 			: base(name, declare)
 		{
@@ -168,6 +200,8 @@ namespace LeeLang
 	{
 		public ClassStructSpec declaring_type;
 		public override bool IsGeneric => true;
+		public override IR_DataType IRType => throw new Exception("未实例化");
+		public override int SizeOf => throw new Exception("未实例化");
 
 		public GenericParamterSpec(ClassStructSpec dt, string name)
 			: base(name, dt)
@@ -179,6 +213,8 @@ namespace LeeLang
 	public class EnumSpec : TypeSpec
 	{
 		public override bool IsEnum => true;
+		public override IR_DataType IRType => base_type.IRType;
+		public override int SizeOf => base_type.SizeOf;
 		public EnumSpec(CommonAttribute attr, string name, NamespaceSpec declare)
 			: base(name, declare)
 		{
@@ -222,6 +258,8 @@ namespace LeeLang
 		public static BuildinTypeSpec String = new BuildinTypeSpec(BuildinType.String, "string", false);
 		public static BuildinTypeSpec Object = new BuildinTypeSpec(BuildinType.Object, "object", false);
 
+		public const int PointerSize = 4;
+
 
 		public BuildinType type;
 		public bool is_value_type;
@@ -232,6 +270,64 @@ namespace LeeLang
 		}
 		public override bool IsStruct => type < BuildinType.String;
 		public override bool IsClass => type >= BuildinType.String;
+		public override IR_DataType IRType
+		{
+			get
+			{
+				switch (type)
+				{
+					case BuildinType.Void:
+						return IR_DataType.Void;
+					case BuildinType.Bool:
+					case BuildinType.SByte:
+					case BuildinType.Byte:
+						return IR_DataType.I1;
+					case BuildinType.Short:
+					case BuildinType.UShort:
+						return IR_DataType.I2;
+					case BuildinType.Int:
+					case BuildinType.UInt:
+						return IR_DataType.I4;
+					case BuildinType.Long:
+					case BuildinType.ULong:
+						return IR_DataType.I8;
+					case BuildinType.Float:
+						return IR_DataType.R4;
+					case BuildinType.Double:
+						return IR_DataType.R8;
+					default:
+						return IR_DataType.Pointer;
+				}
+			}
+		}
+		public override int SizeOf
+		{
+			get
+			{
+				switch (type)
+				{
+					case BuildinType.Void:
+						return 0;
+					case BuildinType.Bool:
+					case BuildinType.SByte:
+					case BuildinType.Byte:
+						return 1;
+					case BuildinType.Short:
+					case BuildinType.UShort:
+						return 2;
+					case BuildinType.Int:
+					case BuildinType.UInt:
+					case BuildinType.Float:
+						return 4;
+					case BuildinType.Long:
+					case BuildinType.ULong:
+					case BuildinType.Double:
+						return 8;
+					default:
+						return PointerSize;
+				}
+			}
+		}
 	}
 
 	public class PointerSpec : TypeSpec
@@ -239,6 +335,8 @@ namespace LeeLang
 		public TypeSpec element_type;
 		public override bool IsPointer => true;
 		public override TypeSpec ElementType => element_type;
+		public override IR_DataType IRType => IR_DataType.Pointer;
+		public override int SizeOf => BuildinTypeSpec.PointerSize;
 
 		public PointerSpec(TypeSpec et)
 			: base(et.name + "*", et.Declaring)
@@ -252,6 +350,8 @@ namespace LeeLang
 		public TypeSpec element_type;
 		public override bool IsArray => true;
 		public override TypeSpec ElementType => element_type;
+		public override IR_DataType IRType => IR_DataType.Pointer;
+		public override int SizeOf => BuildinTypeSpec.PointerSize;
 		public ArraySpec(TypeSpec et)
 			: base(et.name + "[]", et.Declaring)
 		{

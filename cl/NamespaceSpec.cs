@@ -118,6 +118,18 @@ namespace LeeLang
 
 			ctx.scope = scope;
 		}
+		public override void CodeGen(CodeGenContext ctx)
+		{
+			var scope = ctx.scope;
+			ctx.scope = this;
+
+			foreach (var ps in members.Values)
+			{
+				for (int i = 0; i < ps.Count; i++)
+					ps[i].CodeGen(ctx);
+			}
+			ctx.scope = scope;
+		}
 	}
 
 	public class UsingSpec : MemberSpec

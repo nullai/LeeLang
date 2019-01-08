@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using System.IO;
 
 namespace LeeLang
 {
@@ -55,7 +55,13 @@ namespace LeeLang
 			if (!DoResolve())
 				return false;
 
-			Program.PrintAst(Assembly, 0);
+			if (!DoCodeGen())
+				return false;
+
+			StringBuilder sb = new StringBuilder();
+			Assembly.CurrentModule.ir_module.Dump(sb);
+			File.WriteAllText(@"c:\ir.txt", sb.ToString());
+			//Program.PrintAst(Assembly, 0);
 			return true;
 		}
 
@@ -114,6 +120,13 @@ namespace LeeLang
 			Assembly.CurrentModule.DoResolve(ctx);
 			return error_count == 0;
 		}
+
+		private bool DoCodeGen()
+		{
+			CodeGenContext ctx = new CodeGenContext(this);
+			Assembly.CurrentModule.CodeGen(ctx);
+			return error_count == 0;
+		}
 	}
 
 	public class ResolveContext
@@ -129,6 +142,19 @@ namespace LeeLang
 		public bool CheckAccess(MemberSpec member)
 		{
 			return true;
+		}
+	}
+	public class CodeGenContext
+	{
+		public Compiler complier;
+		public NamespaceSpec scope;
+		public IR_Module module;
+		public IR_Method method;
+		public IR_BaseBlock block;
+
+		public CodeGenContext(Compiler complier)
+		{
+			this.complier = complier;
 		}
 	}
 }

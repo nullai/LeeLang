@@ -22,6 +22,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <NoWarn>0162</NoWarn>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -44,12 +45,15 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblySpec.cs" />
+    <Compile Include="IR_BaseBlock.cs" />
     <Compile Include="BlockSpec.cs" />
     <Compile Include="Compiler.cs" />
     <Compile Include="Error.cs" />
-    <Compile Include="ExpressionSpec.cs" />
     <Compile Include="FieldSpec.cs" />
     <Compile Include="FileSpec.cs" />
+    <Compile Include="IR_Instruction.cs" />
+    <Compile Include="IR_Method.cs" />
+    <Compile Include="IR_Module.cs" />
     <Compile Include="Location.cs" />
     <Compile Include="Expression.cs" />
     <Compile Include="MemberSpec.cs" />

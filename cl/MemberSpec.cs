@@ -15,6 +15,8 @@ namespace LeeLang
 		public NamespaceSpec Declaring;
 		public virtual int Arity => 0;
 
+		public bool IsStatic => (attr & CommonAttribute.STATIC) != CommonAttribute.NONE;
+
 
 		public MemberSpec(string name, NamespaceSpec declare)
 		{
@@ -41,6 +43,9 @@ namespace LeeLang
 			resolving = true;
 			Resolve(ctx);
 			resolving = false;
+		}
+		public virtual void CodeGen(CodeGenContext ctx)
+		{
 		}
 	}
 }

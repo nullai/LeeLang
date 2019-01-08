@@ -10,11 +10,14 @@ namespace LeeLang
 	{
 		public AssemblySpec assembly;
 		public string path;
+		public IR_Module ir_module;
 
 		public ModuleSpec(string name, AssemblySpec assembly)
 			: base(name, null)
 		{
 			this.assembly = assembly;
+
+			ir_module = new IR_Module();
 		}
 		public override List<MemberSpec> ResolveName(string name)
 		{
@@ -34,6 +37,12 @@ namespace LeeLang
 				}
 			}
 			return null;
+		}
+		public override void CodeGen(CodeGenContext ctx)
+		{
+			ctx.module = ir_module;
+			base.CodeGen(ctx);
+			ctx.module = null;
 		}
 	}
 }
