@@ -44,22 +44,18 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AssemblySpec.cs" />
-    <Compile Include="IR_BaseBlock.cs" />
-    <Compile Include="BlockSpec.cs" />
-    <Compile Include="Compiler.cs" />
-    <Compile Include="Error.cs" />
-    <Compile Include="FieldSpec.cs" />
-    <Compile Include="FileSpec.cs" />
-    <Compile Include="IR_Instruction.cs" />
-    <Compile Include="IR_Method.cs" />
-    <Compile Include="IR_Module.cs" />
-    <Compile Include="Location.cs" />
+    <Compile Include="Arguments.cs" />
+    <Compile Include="Assembly.cs" />
+    <Compile Include="Ast.cs" />
+    <Compile Include="Context.cs" />
     <Compile Include="Expression.cs" />
+    <Compile Include="Compiler.cs" />
+    <Compile Include="FieldSpec.cs" />
+    <Compile Include="Location.cs" />
     <Compile Include="MemberSpec.cs" />
+    <Compile Include="Message.cs" />
     <Compile Include="MethodSpec.cs" />
-    <Compile Include="ModuleSpec.cs" />
-    <Compile Include="NamespaceSpec.cs" />
+    <Compile Include="Namespace.cs" />
     <Compile Include="Parser.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -67,6 +63,7 @@
     <Compile Include="TokenReader.cs" />
     <Compile Include="Statement.cs" />
     <Compile Include="Tokenizer.cs" />
+    <Compile Include="TypeArguments.cs" />
     <Compile Include="TypeSpec.cs" />
   </ItemGroup>
   <ItemGroup>

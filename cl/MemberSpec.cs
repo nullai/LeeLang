@@ -6,46 +6,45 @@ using System.Threading.Tasks;
 
 namespace LeeLang
 {
+	[Flags]
+	public enum MemberKind
+	{
+		Constructor = 1,
+		Field = 1 << 2,
+		Method = 1 << 3,
+		Property = 1 << 4,
+		Indexer = 1 << 5,
+		Operator = 1 << 6,
+		Destructor = 1 << 7,
+
+		Class = 1 << 11,
+		Struct = 1 << 12,
+		Delegate = 1 << 13,
+		Enum = 1 << 14,
+		Interface = 1 << 15,
+		TypeParameter = 1 << 16,
+		ByRef = 1 << 17,
+
+		ArrayType = 1 << 19,
+		PointerType = 1 << 20,
+		InternalCompilerType = 1 << 21,
+		MissingType = 1 << 22,
+		Void = 1 << 23,
+		Namespace = 1 << 24,
+
+	}
+
 	public class MemberSpec
 	{
-		public bool resolving = false;
 		public CommonAttribute attr;
-		public string prefix;
 		public string name;
-		public NamespaceSpec Declaring;
-		public virtual int Arity => 0;
-
-		public bool IsStatic => (attr & CommonAttribute.STATIC) != CommonAttribute.NONE;
+		public TypeSpec declaringType;
 
 
-		public MemberSpec(string name, NamespaceSpec declare)
+		public MemberSpec(string name, TypeSpec declare)
 		{
 			this.name = name;
-			this.Declaring = declare;
-		}
-
-		public virtual List<MemberSpec> ResolveName(string name)
-		{
-			throw new Exception("ResolveName In " + GetType().Name);
-		}
-
-		public virtual void Resolve(ResolveContext ctx)
-		{
-		}
-		public void DoResolve(ResolveContext ctx)
-		{
-			if (resolving)
-			{
-				ctx.complier.OutputError("存在循环引用！");
-				return;
-			}
-
-			resolving = true;
-			Resolve(ctx);
-			resolving = false;
-		}
-		public virtual void CodeGen(CodeGenContext ctx)
-		{
+			this.declaringType = declare;
 		}
 	}
 }

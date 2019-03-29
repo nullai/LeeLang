@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace LeeLang
 {
-	public class TypeSpec : NamespaceSpec
+	public class TypeSpec : MemberSpec
 	{
 		public TypeSpec base_type = null;
 		public List<TypeSpec> interface_types = null;
@@ -14,16 +14,16 @@ namespace LeeLang
 		protected TypeSpec PointerType;
 		public virtual bool IsArray => false;
 		public virtual bool IsPointer => false;
+		public virtual bool IsReference => false;
 		public virtual bool IsGeneric => false;
 		public virtual bool IsStruct => false;
 		public virtual bool IsClass => false;
 		public virtual bool IsInterface => false;
 		public virtual bool IsEnum => false;
 		public virtual TypeSpec ElementType => null;
-		public virtual IR_DataType IRType => IR_DataType.Void;
 		public virtual int SizeOf => 0;
 
-		public TypeSpec(string name, NamespaceSpec declare)
+		public TypeSpec(string name, TypeSpec declare)
 			: base(name, declare)
 		{
 		}
@@ -52,50 +52,6 @@ namespace LeeLang
 			}
 			return true;
 		}
-		public override List<MemberSpec> ResolveName(string name)
-		{
-			if (resolving)
-				return null;
-			resolving = true;
-			List<MemberSpec> r;
-			if (members.TryGetValue(name, out r))
-			{
-				for (int i = 0; i < r.Count; i++)
-				{
-					var item = r[i];
-					if (item.name == name && item.prefix == null)
-					{
-						resolving = false;
-						r.Clear();
-						r.Add(item);
-						return r;
-					}
-				}
-			}
-			if (usings != null)
-			{
-				for (int i = 0; i < usings.Count; i++)
-				{
-					var t = usings[i].ResolveName(name);
-					if (t != null)
-					{
-						if (r != null)
-							r.AddRange(t);
-						else
-							r = t;
-					}
-				}
-			}
-
-			if (r == null && base_type != null)
-				r = base_type.ResolveName(name);
-
-			if (r == null && Declaring != null)
-				r = Declaring.ResolveName(name);
-
-			resolving = false;
-			return r;
-		}
 		public bool AddInterface(TypeSpec ins)
 		{
 			if (interface_types == null)
@@ -110,112 +66,36 @@ namespace LeeLang
 			interface_types.Add(ins);
 			return true;
 		}
+
+		public override string ToString()
+		{
+			return name;
+		}
 	}
 
-	public class ClassStructSpec : TypeSpec
+	public class InternalType : TypeSpec
 	{
-		public GenericParamterSpec[] generic_paramters;
-		public Dictionary<TypeSpec[], TypeSpec> InsTypes;
-		public bool is_interface = false;
-		public bool is_struct = false;
-		public override bool IsClass => !is_struct && !is_interface;
-		public override bool IsStruct => is_struct;
-		public override bool IsInterface => is_interface;
-		public override bool IsGeneric => generic_paramters != null;
-		public override int Arity => generic_paramters != null ? generic_paramters.Length : 0;
-		public override IR_DataType IRType => IR_DataType.Pointer;
-		public override int SizeOf
+		public static readonly InternalType AnonymousMethod = new InternalType("anonymous method");
+		public static readonly InternalType Arglist = new InternalType("__arglist");
+		public static readonly InternalType MethodGroup = new InternalType("method group");
+		public static readonly InternalType NullLiteral = new InternalType("null");
+		public static readonly InternalType FakeInternalType = new InternalType("<fake$type>");
+		public static readonly InternalType Namespace = new InternalType("<namespace>");
+		public static readonly InternalType ErrorType = new InternalType("<error>");
+		public static readonly InternalType VarOutType = new InternalType("var out");
+		public static readonly InternalType ThrowExpr = new InternalType("throw expression");
+
+		InternalType(string name)
+			: base(name, null)
 		{
-			get
-			{
-				if (is_interface)
-					return BuildinTypeSpec.PointerSize * 2;
-				if (!is_struct)
-					return BuildinTypeSpec.PointerSize;
-
-				if (resolving)
-					throw new Exception("循环依赖");
-
-				resolving = true;
-
-				int size = 0;
-				foreach (var m in members.Values)
-				{
-					for (int i = 0; i < m.Count; i++)
-					{
-						var p = m[i] as FieldSpec;
-						if (p != null && !p.IsStatic)
-							size += p.field_type.SizeOf;
-					}
-				}
-
-				resolving = false;
-				return size;
-			}
-		}
-		public ClassStructSpec(CommonAttribute attr, string name, NamespaceSpec declare, bool ins, bool str)
-			: base(name, declare)
-		{
-			this.attr = attr;
-			is_interface = ins;
-			is_struct = str;
-		}
-		public void SetArity(int arity)
-		{
-			fullname += "`" + arity;
-			generic_paramters = new GenericParamterSpec[arity];
-		}
-		public TypeSpec CreateGenericType(TypeSpec[] args)
-		{
-			if (InsTypes == null)
-				InsTypes = new Dictionary<TypeSpec[], TypeSpec>();
-			else
-			{
-				foreach (var p in InsTypes)
-				{
-					if (CompareTypes(p.Key, args))
-					{
-						return p.Value;
-					}
-				}
-			}
-
-			StringBuilder sb = new StringBuilder();
-			sb.Append(name);
-			sb.Append('<');
-			for (int i = 0; i < args.Length; i++)
-			{
-				if (i != 0)
-					sb.Append(',');
-				sb.Append(args[i].name);
-			}
-			sb.Append('>');
-			var v = new TypeSpec(sb.ToString(), Declaring);
-			InsTypes.Add(args, v);
-			return v;
 		}
 	}
-
-	public class GenericParamterSpec : TypeSpec
-	{
-		public ClassStructSpec declaring_type;
-		public override bool IsGeneric => true;
-		public override IR_DataType IRType => throw new Exception("未实例化");
-		public override int SizeOf => throw new Exception("未实例化");
-
-		public GenericParamterSpec(ClassStructSpec dt, string name)
-			: base(name, dt)
-		{
-			declaring_type = dt;
-		}
-	}
-
+	
 	public class EnumSpec : TypeSpec
 	{
 		public override bool IsEnum => true;
-		public override IR_DataType IRType => base_type.IRType;
 		public override int SizeOf => base_type.SizeOf;
-		public EnumSpec(CommonAttribute attr, string name, NamespaceSpec declare)
+		public EnumSpec(CommonAttribute attr, string name, TypeSpec declare)
 			: base(name, declare)
 		{
 			this.attr = attr;
@@ -267,39 +147,10 @@ namespace LeeLang
 			: base(name, null)
 		{
 			this.type = type;
+			this.is_value_type = is_value_type;
 		}
 		public override bool IsStruct => type < BuildinType.String;
 		public override bool IsClass => type >= BuildinType.String;
-		public override IR_DataType IRType
-		{
-			get
-			{
-				switch (type)
-				{
-					case BuildinType.Void:
-						return IR_DataType.Void;
-					case BuildinType.Bool:
-					case BuildinType.SByte:
-					case BuildinType.Byte:
-						return IR_DataType.I1;
-					case BuildinType.Short:
-					case BuildinType.UShort:
-						return IR_DataType.I2;
-					case BuildinType.Int:
-					case BuildinType.UInt:
-						return IR_DataType.I4;
-					case BuildinType.Long:
-					case BuildinType.ULong:
-						return IR_DataType.I8;
-					case BuildinType.Float:
-						return IR_DataType.R4;
-					case BuildinType.Double:
-						return IR_DataType.R8;
-					default:
-						return IR_DataType.Pointer;
-				}
-			}
-		}
 		public override int SizeOf
 		{
 			get
@@ -330,32 +181,55 @@ namespace LeeLang
 		}
 	}
 
-	public class PointerSpec : TypeSpec
+	public abstract class ElementTypeSpec : TypeSpec
 	{
 		public TypeSpec element_type;
-		public override bool IsPointer => true;
 		public override TypeSpec ElementType => element_type;
-		public override IR_DataType IRType => IR_DataType.Pointer;
 		public override int SizeOf => BuildinTypeSpec.PointerSize;
 
-		public PointerSpec(TypeSpec et)
-			: base(et.name + "*", et.Declaring)
+		public ElementTypeSpec(string name, TypeSpec et)
+			: base(name, et.declaringType)
 		{
 			element_type = et;
 		}
 	}
 
-	public class ArraySpec : TypeSpec
+	public class PointerSpec : ElementTypeSpec
 	{
-		public TypeSpec element_type;
-		public override bool IsArray => true;
-		public override TypeSpec ElementType => element_type;
-		public override IR_DataType IRType => IR_DataType.Pointer;
-		public override int SizeOf => BuildinTypeSpec.PointerSize;
-		public ArraySpec(TypeSpec et)
-			: base(et.name + "[]", et.Declaring)
+		public override bool IsPointer => true;
+
+		public PointerSpec(TypeSpec et)
+			: base(et.name + "*", et)
 		{
-			element_type = et;
+		}
+	}
+
+	public class ArraySpec : ElementTypeSpec
+	{
+		public override bool IsArray => true;
+		public ArraySpec(TypeSpec et)
+			: base(et.name + "[]", et)
+		{
+		}
+	}
+
+	public class ReferenceSpec : ElementTypeSpec
+	{
+		public override bool IsReference => true;
+
+		public ReferenceSpec(TypeSpec et)
+			: base(et.name + "&", et)
+		{
+		}
+	}
+
+	public class TypeParameterSpec : TypeSpec
+	{
+		public MemberSpec Owner;
+		public TypeParameterSpec(MemberSpec owner, string name)
+			: base(name, owner.declaringType)
+		{
+			Owner = owner;
 		}
 	}
 }

@@ -10,7 +10,7 @@ namespace LeeLang
 	{
 		public TypeSpec property_type;
 		public Dictionary<string, MethodSpec> methods = new Dictionary<string, MethodSpec>();
-		public PropertySpec(string name, TypeSpec type, NamespaceSpec declare)
+		public PropertySpec(string name, TypeSpec type, TypeSpec declare)
 			: base(name, declare)
 		{
 			property_type = type;

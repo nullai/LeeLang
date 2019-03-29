@@ -16,9 +16,9 @@ namespace LeeLang
 			{
 				var s = cc.Build();
 				if (s)
-					Console.WriteLine("编译成功，共 {0} 个警告。", cc.warn_count);
+					Console.WriteLine("编译成功，共 {0} 个警告。", cc.Context.warn_count);
 				else
-					Console.WriteLine("编译失败，共 {0} 个错误，共 {1} 个警告。", cc.error_count, cc.warn_count);
+					Console.WriteLine("编译失败，共 {0} 个错误，共 {1} 个警告。", cc.Context.error_count, cc.Context.warn_count);
 			}
 			catch(Exception ex)
 			{

@@ -131,7 +131,8 @@ namespace LeeLang
 		OP_XOR_ASSIGN,
 		OP_OR_ASSIGN,
 
-		LITERAL,
+		STRING_LITERAL,
+		NUMBER_LITERAL,
 		IDENTIFIER,
 		EXPRESSION,
 	}
@@ -233,7 +234,7 @@ namespace LeeLang
 					return Token.INT;
 				case "interface":
 					return Token.INTERFACE;
-				case "internal":
+				case "public":
 					return Token.INTERNAL;
 				case "is":
 					return Token.IS;

@@ -1,0 +1,132 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{B4B5016A-1882-49F3-837A-A324C6076859}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>leec</RootNamespace>
+    <AssemblyName>leec</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AbstractLexer.cs" />
+    <Compile Include="AbstractWarningStateMap.cs" />
+    <Compile Include="Accessibility.cs" />
+    <Compile Include="CachingFactory.cs" />
+    <Compile Include="ChildSyntaxList.cs" />
+    <Compile Include="CommonMessageProvider.cs" />
+    <Compile Include="CompilationOptions.cs" />
+    <Compile Include="ConsList.cs" />
+    <Compile Include="Diagnostic.cs" />
+    <Compile Include="DiagnosticBag.cs" />
+    <Compile Include="DiagnosticDescriptor.cs" />
+    <Compile Include="DiagnosticFormatter.cs" />
+    <Compile Include="DiagnosticInfo.cs" />
+    <Compile Include="DiagnosticInfoWithSymbols.cs" />
+    <Compile Include="LeeDiagnostic.cs" />
+    <Compile Include="DirectiveParser.cs" />
+    <Compile Include="Directives.cs" />
+    <Compile Include="ErrorCode.cs" />
+    <Compile Include="ErrorFacts.cs" />
+    <Compile Include="ExceptionUtilities.cs" />
+    <Compile Include="Extensions.cs" />
+    <Compile Include="ExternalFileLocation.cs" />
+    <Compile Include="FileLinePositionSpan.cs" />
+    <Compile Include="GreenNode.cs" />
+    <Compile Include="Hash.cs" />
+    <Compile Include="LeeDiagnosticFilter.cs" />
+    <Compile Include="LeeDiagnosticInfo.cs" />
+    <Compile Include="LeeLineDirectiveMap.cs" />
+    <Compile Include="LeePragmaWarningStateMap.cs" />
+    <Compile Include="LeeSyntaxNode.cs" />
+    <Compile Include="LeeSyntaxTree.cs" />
+    <Compile Include="LeeSyntaxVisitor.cs" />
+    <Compile Include="Lexer.cs" />
+    <Compile Include="LexerCache.cs" />
+    <Compile Include="LineDirectiveMap.cs" />
+    <Compile Include="LinePosition.cs" />
+    <Compile Include="LinePositionSpan.cs" />
+    <Compile Include="Location.cs" />
+    <Compile Include="MessageID.cs" />
+    <Compile Include="MessageProvider.cs" />
+    <Compile Include="MissingTokenWithTrivia.cs" />
+    <Compile Include="NullableContextOptions.cs" />
+    <Compile Include="NullableDirectiveMap.cs" />
+    <Compile Include="ObjectPool.cs" />
+    <Compile Include="ParseOptions.cs" />
+    <Compile Include="PooledStringBuilder.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SeparatedSyntaxList.cs" />
+    <Compile Include="SourceLocation.cs" />
+    <Compile Include="Span.cs" />
+    <Compile Include="Span.Fast.cs" />
+    <Compile Include="SlidingTextWindow.cs" />
+    <Compile Include="SourceText.cs" />
+    <Compile Include="SpecialType.cs" />
+    <Compile Include="StringTable.cs" />
+    <Compile Include="StringText.cs" />
+    <Compile Include="StructuredTriviaSyntax.cs" />
+    <Compile Include="Symbol.cs" />
+    <Compile Include="Syntax.xml.Internal.Generated.cs" />
+    <Compile Include="SyntaxAnnotation.cs" />
+    <Compile Include="SyntaxDiagnosticInfo.cs" />
+    <Compile Include="SyntaxFactory.cs" />
+    <Compile Include="SyntaxFactoryContext.cs" />
+    <Compile Include="SyntaxFacts.cs" />
+    <Compile Include="SyntaxIdentifier.cs" />
+    <Compile Include="SyntaxIdentifierExtended.cs" />
+    <Compile Include="SyntaxIdentifierWithTrailingTrivia.cs" />
+    <Compile Include="SyntaxIdentifierWithTrivia.cs" />
+    <Compile Include="SyntaxKind.cs" />
+    <Compile Include="SyntaxList.cs" />
+    <Compile Include="SyntaxListBuilder.cs" />
+    <Compile Include="SyntaxParser.cs" />
+    <Compile Include="SyntaxToken.cs" />
+    <Compile Include="SyntaxTokenWithTrivia.cs" />
+    <Compile Include="SyntaxTokenWithValue.cs" />
+    <Compile Include="SyntaxTokenWithValueAndTrivia.cs" />
+    <Compile Include="SyntaxTree.cs" />
+    <Compile Include="SyntaxTrivia.cs" />
+    <Compile Include="SyntaxTriviaList.cs" />
+    <Compile Include="SyntaxTriviaListBuilder.cs" />
+    <Compile Include="TextKeyedCache.cs" />
+    <Compile Include="TextSpan.cs" />
+    <Compile Include="ThreeState.cs" />
+    <Compile Include="UnicodeCharacterUtilities.cs" />
+    <Compile Include="WellKnownMemberNames.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

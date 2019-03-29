@@ -1,0 +1,1318 @@
+
+// 名称语法
+class NameSyntax : TypeSyntax = 0
+{
+}
+
+// 简单名称
+class SimpleNameSyntax : NameSyntax = 0
+{
+	// 名称标识符
+	SyntaxToken Identifier;
+}
+
+// 标识符名称
+class IdentifierNameSyntax : SimpleNameSyntax
+{
+}
+
+// 组合名称
+class QualifiedNameSyntax : NameSyntax
+{
+	// 左边名称
+	NameSyntax Left;
+
+	// 点
+	SyntaxToken DotToken;
+
+	// 右边名称
+	SimpleNameSyntax Right;
+}
+
+// 泛型名称
+class GenericNameSyntax : SimpleNameSyntax
+{
+	// 泛型参数
+	TypeArgumentListSyntax TypeArgumentList;
+}
+
+// 泛型参数
+class TypeArgumentListSyntax : SyntaxNode
+{
+	// 左尖括号
+	SyntaxToken LessThanToken;
+
+	// 参数表
+	SeparatedSyntaxList<TypeSyntax> Arguments;
+
+	// 右尖括号
+	SyntaxToken GreaterThanToken;
+}
+
+// 类型语法
+class TypeSyntax : ExpressionSyntax = 0
+{
+}
+
+// 预定义类型
+class PredefinedTypeSyntax : TypeSyntax
+{
+	// 类型关键字
+	SyntaxToken Keyword;
+}
+
+// 数组类型
+class ArrayTypeSyntax : TypeSyntax
+{
+	// 元素类型
+	TypeSyntax ElementType;
+
+	// 数组维度表
+	SyntaxList<ArrayRankSpecifierSyntax> RankSpecifiers;
+}
+
+// 数组维度
+class ArrayRankSpecifierSyntax : SyntaxNode
+{
+	// 开方括号
+	SyntaxToken OpenBracketToken;
+
+	// 数组长度表
+	SeparatedSyntaxList<ExpressionSyntax> Sizes;
+
+	// 关方括号
+	SyntaxToken CloseBracketToken;
+}
+
+// 指针类型
+class PointerTypeSyntax : TypeSyntax
+{
+	// 元素类型
+	TypeSyntax ElementType;
+
+	// const
+	SyntaxToken ConstToken = null;
+
+	// 星号
+	SyntaxToken AsteriskToken;
+}
+
+// 引用类型
+class RefTypeSyntax : TypeSyntax
+{
+	// 元素类型
+	TypeSyntax ElementType;
+
+	// const
+	SyntaxToken ConstToken = null;
+
+	// &符号
+	SyntaxToken AmpersandToken;
+}
+
+// 表达式语法
+class ExpressionSyntax : SyntaxNode = 0
+{
+}
+
+// 括号表达式
+class ParenthesizedExpressionSyntax : ExpressionSyntax
+{
+	// 开括号
+	SyntaxToken OpenParenToken;
+
+	// 子表达式
+	ExpressionSyntax Expression;
+
+	// 关括号
+	SyntaxToken CloseParenToken;
+}
+
+// 前缀一元表达式
+class PrefixUnaryExpressionSyntax : ExpressionSyntax
+{
+	// 操作符
+	SyntaxToken OperatorToken;
+
+	// 操作数
+	ExpressionSyntax Operand;
+}
+
+// 后缀一元表达式
+class PostfixUnaryExpressionSyntax : ExpressionSyntax
+{
+	// 操作数
+	ExpressionSyntax Operand;
+
+	// 操作符
+	SyntaxToken OperatorToken;
+}
+
+// 成员访问表达式
+class MemberAccessExpressionSyntax : ExpressionSyntax
+{
+	// 左表达式
+	ExpressionSyntax Expression;
+
+	// 访问符号
+	SyntaxToken OperatorToken;
+
+	// 成员名
+	SimpleNameSyntax Name;
+}
+
+// 二元算数表达式
+class BinaryExpressionSyntax : ExpressionSyntax
+{
+	// 左表达式
+	ExpressionSyntax Left;
+
+	// 操作符
+	SyntaxToken OperatorToken;
+
+	// 右表达式
+	ExpressionSyntax Right;
+}
+
+// 赋值表达式
+class AssignmentExpressionSyntax : ExpressionSyntax
+{
+	// 左表达式
+	ExpressionSyntax Left;
+
+	// 操作符
+	SyntaxToken OperatorToken;
+
+	// 右表达式
+	ExpressionSyntax Right;
+}
+
+// 条件表达式
+class ConditionalExpressionSyntax : ExpressionSyntax
+{
+	// 判断表达式
+	ExpressionSyntax Condition;
+
+	// 问号
+	SyntaxToken QuestionToken;
+
+	// 真表达式
+	ExpressionSyntax WhenTrue;
+
+	// 冒号
+	SyntaxToken ColonToken;
+
+	// 假表达式
+	ExpressionSyntax WhenFalse;
+}
+
+// 实例表达式
+class InstanceExpressionSyntax : ExpressionSyntax = 0
+{
+}
+
+// this表达式
+class ThisExpressionSyntax : InstanceExpressionSyntax
+{
+	// SyntaxToken representing the this keyword.
+	SyntaxToken Token;
+}
+
+// base表达式
+class BaseExpressionSyntax : InstanceExpressionSyntax
+{
+	// SyntaxToken representing the base keyword.
+	SyntaxToken Token;
+}
+
+// 字面量表达式
+class LiteralExpressionSyntax : ExpressionSyntax
+{
+	// 字面量
+	SyntaxToken Token;
+}
+
+// default表达式
+class DefaultExpressionSyntax : ExpressionSyntax
+{
+	// default
+	SyntaxToken Keyword;
+
+	// 开括号
+	SyntaxToken OpenParenToken;
+
+	// 类型
+	TypeSyntax Type;
+
+	// 关括号
+	SyntaxToken CloseParenToken;
+}
+
+// typeof表达式
+class TypeOfExpressionSyntax : ExpressionSyntax
+{
+	// typeof
+	SyntaxToken Keyword;
+
+	// 开括号
+	SyntaxToken OpenParenToken;
+
+	// 类型
+	TypeSyntax Type;
+
+	// 关括号
+	SyntaxToken CloseParenToken;
+}
+
+// sizeof表达式
+class SizeOfExpressionSyntax : ExpressionSyntax
+{
+	// sizeof
+	SyntaxToken Keyword;
+
+	// 开括号
+	SyntaxToken OpenParenToken;
+
+	// 类型
+	TypeSyntax Type;
+
+	// 关括号
+	SyntaxToken CloseParenToken;
+}
+
+// 函数调用表达式
+class InvocationExpressionSyntax : ExpressionSyntax
+{
+	// 目标表达式
+	ExpressionSyntax Expression;
+
+	// 参数表
+	ArgumentListSyntax ArgumentList;
+}
+
+// 元素访问表达式
+class ElementAccessExpressionSyntax : ExpressionSyntax
+{
+	// 目标表达式
+	ExpressionSyntax Expression;
+
+	// 参数表
+	BracketedArgumentListSyntax ArgumentList;
+}
+
+// 参数列表基类
+class BaseArgumentListSyntax : SyntaxNode = 0
+{
+	// 参数表
+	SeparatedSyntaxList<ArgumentSyntax> Arguments;
+}
+
+// 参数列表
+class ArgumentListSyntax : BaseArgumentListSyntax
+{
+	// 开括号
+	SyntaxToken OpenParenToken;
+
+
+	// 关括号
+	SyntaxToken CloseParenToken;
+}
+
+// 方括号参数列表
+class BracketedArgumentListSyntax : BaseArgumentListSyntax
+{
+	// 开方括号
+	SyntaxToken OpenBracketToken;
+
+
+	// 关方括号
+	SyntaxToken CloseBracketToken;
+}
+
+// 参数语法
+class ArgumentSyntax : SyntaxNode
+{
+	// 表达式
+	ExpressionSyntax Expression;
+}
+
+// 变量声明语法
+class DeclarationExpressionSyntax : ExpressionSyntax
+{
+	// 变量类型
+	TypeSyntax Type;
+
+	// 变量列表
+	VariableDesignationSyntax Designation;
+}
+
+// 类型转换表达式
+class CastExpressionSyntax : ExpressionSyntax
+{
+	// 开括号
+	SyntaxToken OpenParenToken;
+
+	// 类型
+	TypeSyntax Type;
+
+	// 关括号
+	SyntaxToken CloseParenToken;
+
+	// 表达式
+	ExpressionSyntax Expression;
+}
+
+// 初始化列表语法
+class InitializerExpressionSyntax : ExpressionSyntax
+{
+	// 开大括号
+	SyntaxToken OpenBraceToken;
+
+	// 表达式列表
+	SeparatedSyntaxList<ExpressionSyntax> Expressions;
+
+	// 关大括号
+	SyntaxToken CloseBraceToken;
+}
+
+// new对象表达式
+class ObjectCreationExpressionSyntax : ExpressionSyntax
+{
+	// new
+	SyntaxToken NewKeyword;
+
+	// 类型
+	TypeSyntax Type;
+
+	// 参数表
+	ArgumentListSyntax ArgumentList = null;
+
+	// 初始化列表
+	InitializerExpressionSyntax Initializer = null;
+}
+
+// new数组表达式
+class ArrayCreationExpressionSyntax : ExpressionSyntax
+{
+	// new
+	SyntaxToken NewKeyword;
+
+	// 类型
+	ArrayTypeSyntax Type;
+
+	// 初始化列表
+	InitializerExpressionSyntax Initializer = null;
+}
+
+// is表达式
+class IsPatternExpressionSyntax : ExpressionSyntax
+{
+	// 表达式
+	ExpressionSyntax Expression;
+
+	// is
+	SyntaxToken IsKeyword;
+
+	// 类型
+	TypeSyntax Pattern;
+}
+
+// throw表达式
+class ThrowExpressionSyntax : ExpressionSyntax
+{
+	// throw
+	SyntaxToken ThrowKeyword;
+
+	// 表达式
+	ExpressionSyntax Expression;
+}
+
+// 全局语句
+class GlobalStatementSyntax : MemberDeclarationSyntax
+{
+	// 语句
+	StatementSyntax Statement;
+}
+
+// 语句语法
+class StatementSyntax : SyntaxNode = 0
+{
+}
+
+// 块语句
+class BlockSyntax : StatementSyntax
+{
+	// 开大括号
+	SyntaxToken OpenBraceToken;
+
+	// 子语句
+	SyntaxList<StatementSyntax> Statements;
+
+	// 关大括号
+	SyntaxToken CloseBraceToken;
+}
+
+// 局部变量声明
+class LocalDeclarationStatementSyntax : StatementSyntax
+{
+	// 修饰列表
+	SyntaxList<SyntaxToken> Modifiers;
+
+	// 变量声明
+	VariableDeclarationSyntax Declaration;
+
+	// 分号
+	SyntaxToken SemicolonToken;
+}
+
+// 变量声明
+class VariableDeclarationSyntax : SyntaxNode
+{
+	// 类型
+	TypeSyntax Type;
+
+	// 变量表
+	SeparatedSyntaxList<VariableDeclaratorSyntax> Variables;
+}
+
+// 变量定义
+class VariableDeclaratorSyntax : SyntaxNode
+{
+	// 名称
+	SyntaxToken Identifier;
+
+	// 参数表
+	BracketedArgumentListSyntax ArgumentList = null;
+
+	// 初始化表
+	EqualsValueClauseSyntax Initializer = null;
+}
+
+// 赋初值
+class EqualsValueClauseSyntax : SyntaxNode
+{
+	// 等号
+	SyntaxToken EqualsToken;
+
+	// 值
+	ExpressionSyntax Value;
+}
+
+// 变量指定
+class VariableDesignationSyntax : SyntaxNode = 0
+{
+}
+
+// 简单变量指定
+class SingleVariableDesignationSyntax : VariableDesignationSyntax
+{
+	SyntaxToken Identifier;
+}
+
+// 表达式语句
+class ExpressionStatementSyntax : StatementSyntax
+{
+	// 表达式
+	ExpressionSyntax Expression;
+
+	// 分号
+	SyntaxToken SemicolonToken;
+}
+
+// 空语句
+class EmptyStatementSyntax : StatementSyntax
+{
+	// 分号
+	SyntaxToken SemicolonToken;
+}
+
+// 标签语句
+class LabeledStatementSyntax : StatementSyntax
+{
+	// 标签名
+	SyntaxToken Identifier;
+
+	// 冒号
+	SyntaxToken ColonToken;
+
+	// 语句
+	StatementSyntax Statement;
+}
+
+// goto语句
+class GotoStatementSyntax : StatementSyntax
+{
+	// goto
+	SyntaxToken GotoKeyword;
+
+	// case 或 default关键字
+	SyntaxToken CaseOrDefaultKeyword = null;
+
+	// 表达式
+	ExpressionSyntax Expression = null;
+
+	// 分号
+	SyntaxToken SemicolonToken;
+}
+
+// break语句
+class BreakStatementSyntax : StatementSyntax
+{
+	// break
+	SyntaxToken BreakKeyword;
+
+	// 分号
+	SyntaxToken SemicolonToken;
+}
+
+// continue语句
+class ContinueStatementSyntax : StatementSyntax
+{
+	// continue
+	SyntaxToken ContinueKeyword;
+
+	// 分号
+	SyntaxToken SemicolonToken;
+}
+
+// return语句
+class ReturnStatementSyntax : StatementSyntax
+{
+	// return
+	SyntaxToken ReturnKeyword;
+
+	// 返回值
+	ExpressionSyntax Expression = null;
+
+	// 分号
+	SyntaxToken SemicolonToken;
+}
+
+// throw语句
+class ThrowStatementSyntax : StatementSyntax
+{
+	// throw
+	SyntaxToken ThrowKeyword;
+
+	// 表达式
+	ExpressionSyntax Expression = null;
+
+	// 分号
+	SyntaxToken SemicolonToken;
+}
+
+// while语句
+class WhileStatementSyntax : StatementSyntax
+{
+	// while
+	SyntaxToken WhileKeyword;
+
+	// 开括号
+	SyntaxToken OpenParenToken;
+
+	// 条件表达式
+	ExpressionSyntax Condition;
+
+	// 关括号
+	SyntaxToken CloseParenToken;
+
+	// 循环体
+	StatementSyntax Statement;
+}
+
+// do-while语句
+class DoStatementSyntax : StatementSyntax
+{
+	// do
+	SyntaxToken DoKeyword;
+
+	// 循环体
+	StatementSyntax Statement;
+
+	// while
+	SyntaxToken WhileKeyword;
+
+	// 开括号
+	SyntaxToken OpenParenToken;
+
+	// 条件表达式
+	ExpressionSyntax Condition;
+
+	// 关括号
+	SyntaxToken CloseParenToken;
+
+	// 分号
+	SyntaxToken SemicolonToken;
+}
+
+// for语句
+class ForStatementSyntax : StatementSyntax
+{
+	// for
+	SyntaxToken ForKeyword;
+
+	// 开括号
+	SyntaxToken OpenParenToken;
+
+	// 变量声明
+	VariableDeclarationSyntax Declaration = null;
+
+	// 初始化表达式
+	SeparatedSyntaxList<ExpressionSyntax> Initializers;
+
+	// 第一个分号
+	SyntaxToken FirstSemicolonToken;
+
+	// 条件表达式
+	ExpressionSyntax Condition = null;
+
+	// 第二个分号
+	SyntaxToken SecondSemicolonToken;
+
+	// 递增表达式
+	SeparatedSyntaxList<ExpressionSyntax> Incrementors;
+
+	// 关括号
+	SyntaxToken CloseParenToken;
+
+	// 循环体
+	StatementSyntax Statement;
+}
+
+// foreach语句
+class ForEachStatementSyntax : StatementSyntax
+{
+	// foreach
+	SyntaxToken ForEachKeyword;
+
+	// 开括号
+	SyntaxToken OpenParenToken;
+	
+	// 变量类型
+	TypeSyntax Type = null;
+	
+	// 变量名
+	SyntaxToken Identifier;
+
+	// in或冒号
+	SyntaxToken InKeyword;
+
+	// 表达式
+	ExpressionSyntax Expression;
+
+	// 关括号
+	SyntaxToken CloseParenToken;
+
+	// 循环体
+	StatementSyntax Statement;
+}
+
+// if语句
+class IfStatementSyntax : StatementSyntax
+{
+	// if
+	SyntaxToken IfKeyword;
+
+	// 开括号
+	SyntaxToken OpenParenToken;
+
+	// 条件表达式
+	ExpressionSyntax Condition;
+
+	// 关括号
+	SyntaxToken CloseParenToken;
+
+	// 语句体
+	StatementSyntax Statement;
+
+	// else语句
+	ElseClauseSyntax Else = null;
+}
+
+// else语句
+class ElseClauseSyntax : SyntaxNode
+{
+	// else
+	SyntaxToken ElseKeyword;
+
+	// 语句体
+	StatementSyntax Statement;
+}
+
+// switch语句
+class SwitchStatementSyntax : StatementSyntax
+{
+	// switch
+	SyntaxToken SwitchKeyword;
+
+	// 开括号
+	SyntaxToken OpenParenToken = null;
+
+	// 表达式
+	ExpressionSyntax Expression;
+
+	// 关括号
+	SyntaxToken CloseParenToken = null;
+
+	// 开大括号
+	SyntaxToken OpenBraceToken;
+
+	// case区段
+	SyntaxList<SwitchSectionSyntax> Sections;
+
+	// 关大括号
+	SyntaxToken CloseBraceToken;
+}
+
+// switch-case区段
+class SwitchSectionSyntax : SyntaxNode
+{
+	// case标签
+	SyntaxList<SwitchLabelSyntax> Labels;
+
+	// 语句列表
+	SyntaxList<StatementSyntax> Statements;
+}
+
+// case标签
+class SwitchLabelSyntax : SyntaxNode
+{
+	// case或default
+	SyntaxToken Keyword;
+
+	// 值
+	ExpressionSyntax Value = null;
+
+	// 分号
+	SyntaxToken ColonToken;
+}
+
+// try语句
+class TryStatementSyntax : StatementSyntax
+{
+	// try
+	SyntaxToken TryKeyword;
+
+	// 语句体
+	BlockSyntax Block;
+
+	// Catch表
+	SyntaxList<CatchClauseSyntax> Catches;
+
+	// Finally体
+	FinallyClauseSyntax Finally = null;
+}
+
+// Catch语句
+class CatchClauseSyntax : SyntaxNode
+{
+	// catch
+	SyntaxToken CatchKeyword;
+
+	// 异常描述
+	CatchDeclarationSyntax Declaration = null;
+
+	// Catch体
+	BlockSyntax Block;
+}
+
+// 异常描述
+class CatchDeclarationSyntax : SyntaxNode
+{
+	// 开括号
+	SyntaxToken OpenParenToken;
+
+	// 类型
+	TypeSyntax Type;
+
+	// 名称
+	SyntaxToken Identifier = null;
+
+	// 关括号
+	SyntaxToken CloseParenToken;
+}
+
+// Finally体
+class FinallyClauseSyntax : SyntaxNode
+{
+	// finally
+	SyntaxToken FinallyKeyword;
+
+	// Finally体
+	BlockSyntax Block;
+}
+
+// 文件单元
+class FileUnitSyntax : SyntaxNode
+{
+	// using语句
+	SyntaxList<UsingDirectiveSyntax> Usings;
+
+	// 属性表
+	SyntaxList<AttributeListSyntax> AttributeLists;
+
+	// 成员
+	SyntaxList<MemberDeclarationSyntax> Members;
+}
+
+// using声明
+class UsingDirectiveSyntax : SyntaxNode
+{
+	// using
+	SyntaxToken UsingKeyword;
+
+	// 别名
+	NameEqualsSyntax Alias = null;
+
+	// 引用目标名
+	NameSyntax Name;
+
+	// 分号
+	SyntaxToken SemicolonToken;
+}
+
+// 成员定义
+class MemberDeclarationSyntax : SyntaxNode = 0
+{
+}
+
+// 命名空间定义
+class NamespaceDeclarationSyntax : MemberDeclarationSyntax
+{
+	// namespace
+	SyntaxToken NamespaceKeyword;
+
+	// 名称
+	NameSyntax Name;
+
+	// 开大括号
+	SyntaxToken OpenBraceToken;
+
+	// 引用表
+	SyntaxList<UsingDirectiveSyntax> Usings;
+
+	// 成员
+	SyntaxList<MemberDeclarationSyntax> Members;
+
+	// 关大括号
+	SyntaxToken CloseBraceToken;
+
+	// 分号
+	SyntaxToken SemicolonToken = null;
+}
+
+// 属性定义
+class AttributeListSyntax : SyntaxNode
+{
+	// @符号
+	SyntaxToken AtToken;
+
+	// 名称
+	NameSyntax Name;
+
+	// 值
+	EqualsValueClauseSyntax Value = null;
+}
+
+// 名称=
+class NameEqualsSyntax : SyntaxNode
+{
+	// 名称
+	IdentifierNameSyntax Name;
+
+	// 等号
+	SyntaxToken EqualsToken;
+}
+
+// 类型形参列表
+class TypeParameterListSyntax : SyntaxNode
+{
+	// 左尖括号
+	SyntaxToken LessThanToken;
+
+	// 形参表
+	SeparatedSyntaxList<TypeParameterSyntax> Parameters;
+
+	// 右尖括号
+	SyntaxToken GreaterThanToken;
+}
+
+// 类型形参
+class TypeParameterSyntax : SyntaxNode
+{
+	// 形参名
+	SyntaxToken Identifier;
+}
+
+// 类型定义基类
+class BaseTypeDeclarationSyntax : MemberDeclarationSyntax = 0
+{
+	// 属性表
+	SyntaxList<AttributeListSyntax> AttributeLists;
+
+	// 修饰列表
+	SyntaxList<SyntaxToken> Modifiers;
+
+	// 名称
+	SyntaxToken Identifier;
+
+	// 基类列表
+	BaseListSyntax BaseList = null;
+
+	// 开大括号
+	SyntaxToken OpenBraceToken;
+
+	// 关大括号
+	SyntaxToken CloseBraceToken;
+
+	// 分号
+	SyntaxToken SemicolonToken = null;
+}
+
+// 类型定义
+class TypeDeclarationSyntax : BaseTypeDeclarationSyntax = 0
+{
+	// 关键字 ("class", "struct", "interface", "enum").
+	SyntaxToken Keyword;
+
+	// 类型形参
+	TypeParameterListSyntax TypeParameterList = null;
+
+	// 类成员
+	SyntaxList<MemberDeclarationSyntax> Members;
+}
+
+// 类定义
+class ClassDeclarationSyntax : TypeDeclarationSyntax
+{
+}
+
+// 结构体定义
+class StructDeclarationSyntax : TypeDeclarationSyntax
+{
+}
+
+// 接口定义
+class InterfaceDeclarationSyntax : TypeDeclarationSyntax
+{
+}
+
+// 枚举类型
+class EnumDeclarationSyntax : TypeDeclarationSyntax
+{
+	// 枚举成员列表
+	SeparatedSyntaxList<EnumMemberDeclarationSyntax> Members;
+}
+
+// 委托类型
+class DelegateDeclarationSyntax : MemberDeclarationSyntax
+{
+	// 属性表
+	SyntaxList<AttributeListSyntax> AttributeLists;
+
+	// 修饰列表
+	SyntaxList<SyntaxToken> Modifiers;
+
+	// delegate
+	SyntaxToken DelegateKeyword;
+
+	// 返回类型
+	TypeSyntax ReturnType;
+
+	// 名称
+	SyntaxToken Identifier;
+
+	// 类型形参
+	TypeParameterListSyntax TypeParameterList = null;
+
+	// 方法形参表
+	ParameterListSyntax ParameterList;
+
+	// 分号
+	SyntaxToken SemicolonToken;
+}
+
+// 枚举成员
+class EnumMemberDeclarationSyntax : MemberDeclarationSyntax
+{
+	// 属性表
+	SyntaxList<AttributeListSyntax> AttributeLists;
+
+	// 名称
+	SyntaxToken Identifier;
+
+	// 值
+	EqualsValueClauseSyntax EqualsValue = null;
+}
+
+// 基类列表
+class BaseListSyntax : SyntaxNode
+{
+	// 冒号
+	SyntaxToken ColonToken;
+
+	// 类型列表
+	SeparatedSyntaxList<TypeSyntax> Types;
+}
+
+// 字段定义
+class FieldDeclarationSyntax : MemberDeclarationSyntax = 0
+{
+	// 属性表
+	SyntaxList<AttributeListSyntax> AttributeLists;
+
+	// 修饰列表
+	SyntaxList<SyntaxToken> Modifiers;
+
+	// 字段描述
+	VariableDeclarationSyntax Declaration;
+
+	// 分号
+	SyntaxToken SemicolonToken;
+}
+
+// 显示接口指定
+class ExplicitInterfaceSpecifierSyntax : SyntaxNode
+{
+	// 接口名
+	NameSyntax Name;
+
+	// 点号
+	SyntaxToken DotToken;
+}
+
+// 方法定义基类
+class BaseMethodDeclarationSyntax : MemberDeclarationSyntax = 0
+{
+	// 属性表
+	SyntaxList<AttributeListSyntax> AttributeLists;
+
+	// 修饰列表
+	SyntaxList<SyntaxToken> Modifiers;
+
+	// 参数列表
+	ParameterListSyntax ParameterList;
+
+	// 方法体
+	BlockSyntax Body = null;
+
+	// 箭头表达式
+	ArrowExpressionClauseSyntax ExpressionBody = null;
+
+	// 分号
+	SyntaxToken SemicolonToken = null;
+}
+
+// 方法定义
+class MethodDeclarationSyntax : BaseMethodDeclarationSyntax
+{
+	// 返回类型
+	TypeSyntax ReturnType;
+
+	// 显示接口名
+	ExplicitInterfaceSpecifierSyntax ExplicitInterfaceSpecifier = null;
+
+	// 方法名
+	SyntaxToken Identifier;
+
+	// 类型形参
+	TypeParameterListSyntax TypeParameterList = null;
+}
+
+// 操作符方法
+class OperatorDeclarationSyntax : BaseMethodDeclarationSyntax
+{
+	// 返回类型
+	TypeSyntax ReturnType;
+
+	// operator
+	SyntaxToken OperatorKeyword;
+
+	// 操作符
+	SyntaxToken OperatorToken;
+}
+
+// 类型转换操作符
+class ConversionOperatorDeclarationSyntax : BaseMethodDeclarationSyntax
+{
+	// operator
+	SyntaxToken OperatorKeyword;
+
+	// 类型
+	TypeSyntax Type;
+}
+
+// 构造器
+class ConstructorDeclarationSyntax : BaseMethodDeclarationSyntax
+{
+	// 名称
+	SyntaxToken Identifier;
+
+	// 初始化器
+	ConstructorInitializerSyntax Initializer = null;
+}
+
+// 构造器初始化器
+class ConstructorInitializerSyntax : SyntaxNode
+{
+	// 冒号
+	SyntaxToken ColonToken;
+
+	// this 或 base
+	SyntaxToken ThisOrBaseKeyword;
+
+	// 参数表
+	ArgumentListSyntax ArgumentList;
+}
+
+// 析构器
+class DestructorDeclarationSyntax : BaseMethodDeclarationSyntax
+{
+	// 破浪号
+	SyntaxToken TildeToken;
+
+	// 名称
+	SyntaxToken Identifier;
+}
+
+// 属性定义基类
+class BasePropertyDeclarationSyntax : MemberDeclarationSyntax = 0
+{
+	// 属性表
+	SyntaxList<AttributeListSyntax> AttributeLists;
+
+	// 修饰列表
+	SyntaxList<SyntaxToken> Modifiers;
+
+	// 类型
+	TypeSyntax Type;
+
+	// 显示接口名
+	ExplicitInterfaceSpecifierSyntax ExplicitInterfaceSpecifier = null;
+
+	// 属性体
+	AccessorListSyntax AccessorList = null;
+}
+
+// 属性定义
+class PropertyDeclarationSyntax : BasePropertyDeclarationSyntax
+{
+	// 名称
+	SyntaxToken Identifier;
+
+	// 箭头表达式
+	ArrowExpressionClauseSyntax ExpressionBody = null;
+
+	// 初始化
+	EqualsValueClauseSyntax Initializer = null;
+
+	// 分号
+	SyntaxToken SemicolonToken = null;
+}
+
+// 箭头表达式
+class ArrowExpressionClauseSyntax : SyntaxNode
+{
+	// 箭头
+	SyntaxToken ArrowToken;
+
+	// 表达式
+	ExpressionSyntax Expression;
+}
+
+// 下标访问
+class IndexerDeclarationSyntax : BasePropertyDeclarationSyntax
+{
+	// this
+	SyntaxToken ThisKeyword;
+
+	// 方括号形参列表
+	BracketedParameterListSyntax ParameterList;
+
+	// 箭头表达式
+	ArrowExpressionClauseSyntax ExpressionBody = null;
+
+	// 分号
+	SyntaxToken SemicolonToken = null;
+}
+
+// 属性体
+class AccessorListSyntax : SyntaxNode
+{
+	// 开大括号
+	SyntaxToken OpenBraceToken;
+
+	// 属性方法表
+	SyntaxList<AccessorDeclarationSyntax> Accessors;
+
+	// 关大括号
+	SyntaxToken CloseBraceToken;
+}
+
+// 属性方法
+class AccessorDeclarationSyntax : SyntaxNode
+{
+	// 属性表
+	SyntaxList<AttributeListSyntax> AttributeLists;
+
+	// 修饰列表
+	SyntaxList<SyntaxToken> Modifiers;
+
+	// 方法关键字(get,set,add,remove)
+	SyntaxToken Keyword;
+
+	// 方法体
+	BlockSyntax Body = null;
+
+	// 箭头表达式
+	ArrowExpressionClauseSyntax ExpressionBody = null;
+
+	// 分号
+	SyntaxToken SemicolonToken = null;
+}
+
+// 形参表基类
+class BaseParameterListSyntax : SyntaxNode = 0
+{
+	// 形参
+	SeparatedSyntaxList<ParameterSyntax> Parameters;
+}
+
+// 形参表
+class ParameterListSyntax : BaseParameterListSyntax
+{
+	// 开括号
+	SyntaxToken OpenParenToken;
+
+	// 关括号
+	SyntaxToken CloseParenToken;
+}
+
+// 方括号形参列表
+class BracketedParameterListSyntax : BaseParameterListSyntax
+{
+	// 开方括号
+	SyntaxToken OpenBracketToken;
+
+	// 关方括号
+	SyntaxToken CloseBracketToken;
+}
+
+// 形参
+class ParameterSyntax : SyntaxNode
+{
+	// 属性表
+	SyntaxList<AttributeListSyntax> AttributeLists;
+
+	// 修饰列表
+	SyntaxList<SyntaxToken> Modifiers;
+
+	// 类型
+	TypeSyntax Type = null;
+
+	// 名称
+	SyntaxToken Identifier;
+
+	// 默认值
+	EqualsValueClauseSyntax Default = null;
+}
