@@ -10,7 +10,8 @@ namespace leec
 		static void Main(string[] args)
 		{
 			ParseOptions options = new ParseOptions(new string[] { "DEBUG" });
-			LeeSyntaxTree.ParseText("using System;", options);
+			var tree = LeeSyntaxTree.ParseText("using System;class Program{}class Program{}", options);
+			Console.WriteLine("OK");
 		}
 	}
 }

@@ -61,11 +61,6 @@ namespace leec
 		public abstract SourceText GetText(CancellationToken cancellationToken = default(CancellationToken));
 
 		/// <summary>
-		/// The text encoding of the source document.
-		/// </summary>
-		public abstract Encoding Encoding { get; }
-
-		/// <summary>
 		/// Gets the root of the syntax tree if it is available.
 		/// </summary>
 		public bool TryGetRoot(out GreenNode root)
@@ -205,36 +200,9 @@ namespace leec
 		}
 
 		/// <summary>
-		/// Are there any hidden regions in the tree?
-		/// </summary>
-		/// <returns>True if there is at least one hidden region.</returns>
-		public abstract bool HasHiddenRegions();
-
-		/// <summary>
-		/// Returns a list of the changed regions between this tree and the specified tree. The list is conservative for
-		/// performance reasons. It may return larger regions than what has actually changed.
-		/// </summary>
-		public abstract IList<TextSpan> GetChangedSpans(SyntaxTree syntaxTree);
-
-		/// <summary>
 		/// Gets a location for the specified text span.
 		/// </summary>
 		public abstract Location GetLocation(TextSpan span);
-
-		/// <summary>
-		/// Determines if two trees are the same, disregarding trivia differences.
-		/// </summary>
-		/// <param name="tree">The tree to compare against.</param>
-		/// <param name="topLevel"> If true then the trees are equivalent if the contained nodes and tokens declaring
-		/// metadata visible symbolic information are equivalent, ignoring any differences of nodes inside method bodies
-		/// or initializer expressions, otherwise all nodes and tokens must be equivalent. 
-		/// </param>
-		public abstract bool IsEquivalentTo(SyntaxTree tree, bool topLevel = false);
-
-		/// <summary>
-		/// Returns a new tree whose <see cref="FilePath"/> is the specified node and other properties are copied from the current tree.
-		/// </summary>
-		public abstract SyntaxTree WithFilePath(string path);
 
 		/// <summary>
 		/// Returns a <see cref="String" /> that represents the entire source text of this <see cref="SyntaxTree"/>.

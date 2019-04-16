@@ -44,7 +44,6 @@ namespace leec
 
 		public override string KindText => this.Kind.ToString();
 
-		public SyntaxTree SyntaxTree => null;
 
 		public override int RawContextualKind
 		{

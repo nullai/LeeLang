@@ -112,19 +112,12 @@ namespace leec
 
 			using (var lexer = new Lexer(text, options))
 			{
-				LexerMode mode = LexerMode.Syntax;
-				var tk = lexer.Lex(mode);
-				tk = lexer.Lex(mode);
-				tk = lexer.Lex(mode);
-				tk = lexer.Lex(mode);
-				throw new Exception();
-				//using (var parser = new LanguageParser(lexer))
-				//{
-				//	var compilationUnit = (CompilationUnitSyntax)parser.ParseCompilationUnit();
-				//	var tree = new ParsedSyntaxTree(text, path, compilationUnit, parser.Directives);
-				//	tree.VerifySource();
-				//	return tree;
-				//}
+				using (var parser = new LanguageParser(lexer))
+				{
+					var compilationUnit = (CompilationUnitSyntax)parser.ParseCompilationUnit();
+					var tree = new ParsedSyntaxTree(text, path, options, compilationUnit, parser.Directives);
+					return tree;
+				}
 			}
 		}
 
@@ -200,21 +193,6 @@ namespace leec
 			}
 
 			return _lazyLineDirectiveMap.TranslateSpanAndVisibility(this.GetText(), this.FilePath, span, out isHiddenPosition);
-		}
-
-		/// <summary>
-		/// Gets a boolean value indicating whether there are any hidden regions in the tree.
-		/// </summary>
-		/// <returns>True if there is at least one hidden region.</returns>
-		public override bool HasHiddenRegions()
-		{
-			if (_lazyLineDirectiveMap == null)
-			{
-				// Create the line directive map on demand.
-				Interlocked.CompareExchange(ref _lazyLineDirectiveMap, new LeeLineDirectiveMap(this), null);
-			}
-
-			return _lazyLineDirectiveMap.HasAnyHiddenRegions();
 		}
 
 		/// <summary>

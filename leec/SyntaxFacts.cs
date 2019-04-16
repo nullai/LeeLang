@@ -894,7 +894,6 @@ namespace leec
 			if (kind >= SyntaxKind.TildeToken && kind < SyntaxKind.EndOfLineTrivia) return true;
 			switch (kind)
 			{
-				case SyntaxKind.InterpolatedStringToken:
 				case SyntaxKind.InterpolatedStringStartToken:
 				case SyntaxKind.InterpolatedVerbatimStringStartToken:
 				case SyntaxKind.InterpolatedStringTextToken:

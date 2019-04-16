@@ -200,5 +200,33 @@ namespace leec
 		}
 
 		public override int ERR_BadAssemblyName => (int)ErrorCode.ERR_BadAssemblyName;
+
+		public override void ReportDuplicateMetadataReferenceStrong(DiagnosticBag diagnostics, Location location, MetadataReference reference, AssemblyIdentity identity, MetadataReference equivalentReference, AssemblyIdentity equivalentIdentity)
+		{
+			diagnostics.Add(ErrorCode.ERR_DuplicateImport, location,
+				reference.Display ?? identity.GetDisplayName(),
+				equivalentReference.Display ?? equivalentIdentity.GetDisplayName());
+		}
+
+		public override void ReportDuplicateMetadataReferenceWeak(DiagnosticBag diagnostics, Location location, MetadataReference reference, AssemblyIdentity identity, MetadataReference equivalentReference, AssemblyIdentity equivalentIdentity)
+		{
+			diagnostics.Add(ErrorCode.ERR_DuplicateImportSimple, location,
+				identity.Name,
+				reference.Display ?? identity.GetDisplayName());
+		}
+
+		public override void ReportInvalidAttributeArgument(DiagnosticBag diagnostics, GreenNode attributeSyntax, int parameterIndex, AttributeData attribute)
+		{
+			throw new NotImplementedException();
+			//var node = (AttributeSyntax)attributeSyntax;
+			//CSharpSyntaxNode attributeArgumentSyntax = attribute.GetAttributeArgumentSyntax(parameterIndex, node);
+			//diagnostics.Add(ErrorCode.ERR_InvalidAttributeArgument, attributeArgumentSyntax.Location, node.GetErrorDisplayName());
+		}
+
+		public override void ReportInvalidNamedArgument(DiagnosticBag diagnostics, GreenNode attributeSyntax, int namedArgumentIndex, ITypeSymbol attributeClass, string parameterName)
+		{
+			var node = (AttributeSyntax)attributeSyntax;
+			diagnostics.Add(ErrorCode.ERR_InvalidNamedArgument, node.ArgumentList.Arguments[namedArgumentIndex].Location, parameterName);
+		}
 	}
 }

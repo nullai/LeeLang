@@ -35,6 +35,7 @@ namespace leec
 		public LeeSyntaxNode Parent => null;
 
 		public Location Location => default(Location);
+		public SyntaxTree SyntaxTree => null;
 
 		public TextSpan Span
 		{

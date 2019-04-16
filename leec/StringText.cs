@@ -8,13 +8,16 @@ namespace leec
 	public class StringText : SourceText
 	{
 		private readonly string _source;
-		public StringText(string source)
+		private readonly Encoding _encodingOpt;
+		public StringText(string source, Encoding encodingOpt)
 		{
 			_source = source;
+			_encodingOpt = encodingOpt;
 		}
 
 		public string Source => _source;
 
+		public override Encoding Encoding => _encodingOpt;
 		public override int Length => _source.Length;
 
 		public override char this[int position]

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -316,6 +317,18 @@ namespace leec
 		public static int CombineFNVHash(int hashCode, char ch)
 		{
 			return unchecked((hashCode ^ ch) * Hash.FnvPrime);
+		}
+
+		public static System.Security.Cryptography.MD5 MD5Provider = new System.Security.Cryptography.MD5CryptoServiceProvider();
+
+		public static byte[] ComputeHash(Stream s)
+		{
+			return MD5Provider.ComputeHash(s);
+		}
+
+		public static byte[] ComputeHash(byte[] s)
+		{
+			return MD5Provider.ComputeHash(s);
 		}
 	}
 }

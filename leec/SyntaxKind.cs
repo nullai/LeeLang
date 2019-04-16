@@ -233,8 +233,6 @@ namespace leec
 		NumericLiteralToken = 8509,
 		CharacterLiteralToken = 8510,
 		StringLiteralToken = 8511,
-
-		InterpolatedStringToken = 8515,                 // terminal for a whole interpolated string $" ... { expr } ..."
 														// This only exists in transient form during parsing.
 		InterpolatedStringTextToken = 8517,             // literal text that is part of an interpolated string
 

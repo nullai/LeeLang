@@ -550,7 +550,7 @@ namespace leec
 			return WithAdditionalDiagnostics(node, MakeError(offset, width, code, args));
 		}
 
-		protected TNode AddError<TNode>(TNode node, int offset, int length, ErrorCode code, params object[] args) where TNode : LeeSyntaxNode
+		protected TNode AddError<TNode>(TNode node, int offset, int length, ErrorCode code, params object[] args) where TNode : GreenNode
 		{
 			return WithAdditionalDiagnostics(node, MakeError(offset, length, code, args));
 		}
@@ -624,9 +624,9 @@ namespace leec
 			return new SyntaxDiagnosticInfo(code, args);
 		}
 
-		protected TNode AddLeadingSkippedSyntax<TNode>(TNode node, GreenNode skippedSyntax) where TNode : LeeSyntaxNode
+		protected TNode AddLeadingSkippedSyntax<TNode>(TNode node, GreenNode skippedSyntax) where TNode : GreenNode
 		{
-			var oldToken = node as SyntaxToken ?? node.GetFirstToken();
+			var oldToken = node as SyntaxToken ?? (node as LeeSyntaxNode).GetFirstToken();
 			var newToken = AddSkippedSyntax(oldToken, skippedSyntax, trailing: false);
 			return node;
 		}

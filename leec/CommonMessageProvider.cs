@@ -258,5 +258,10 @@ namespace leec
 		public abstract void ReportAttributeParameterRequired(DiagnosticBag diagnostics, GreenNode attributeSyntax, string parameterName1, string parameterName2);
 
 		public abstract int ERR_BadAssemblyName { get; }
+
+		public abstract void ReportDuplicateMetadataReferenceStrong(DiagnosticBag diagnostics, Location location, MetadataReference reference, AssemblyIdentity identity, MetadataReference equivalentReference, AssemblyIdentity equivalentIdentity);
+		public abstract void ReportDuplicateMetadataReferenceWeak(DiagnosticBag diagnostics, Location location, MetadataReference reference, AssemblyIdentity identity, MetadataReference equivalentReference, AssemblyIdentity equivalentIdentity);
+		public abstract void ReportInvalidAttributeArgument(DiagnosticBag diagnostics, GreenNode attributeSyntax, int parameterIndex, AttributeData attribute);
+		public abstract void ReportInvalidNamedArgument(DiagnosticBag diagnostics, GreenNode attributeSyntax, int namedArgumentIndex, ITypeSymbol attributeClass, string parameterName);
 	}
 }

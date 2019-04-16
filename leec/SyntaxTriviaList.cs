@@ -194,6 +194,19 @@ namespace leec
 			return Node != null;
 		}
 
+		public bool Any(int kind)
+		{
+			foreach (var element in this)
+			{
+				if (element.RawKind == kind)
+				{
+					return true;
+				}
+			}
+
+			return false;
+		}
+
 		/// <summary>
 		/// Returns a list which contains all elements of <see cref="SyntaxTriviaList"/> in reversed order.
 		/// </summary>
